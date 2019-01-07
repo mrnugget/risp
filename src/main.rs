@@ -73,10 +73,7 @@ fn read_number<T: Iterator<Item = char>>(
     c: char,
     iter: &mut Peekable<T>,
 ) -> Result<i64, std::num::ParseIntError> {
-    let mut number = match c.to_string().parse::<i64>() {
-        Ok(number) => number,
-        Err(e) => return Err(e),
-    };
+    let mut number = c.to_string().parse::<i64>()?;
 
     while let Some(Ok(digit)) = iter.peek().map(|c| c.to_string().parse::<i64>()) {
         number = number * 10 + digit;
