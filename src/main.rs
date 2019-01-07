@@ -83,19 +83,30 @@ fn read_number<T: Iterator<Item = char>>(
     Ok(number)
 }
 
+fn read_object<T: Iterator<Item = char>>(
+    c: char,
+    lexer: &mut Peekable<T>,
+) -> Result<Rc<Object>, String> {
+    match c {
+        '0'...'9' => match read_number(c, lexer) {
+            Ok(integer) => Ok(Rc::new(Object::Integer(integer))),
+            Err(e) => Err(format!("parsing number failed: {}", e)),
+        },
+        '(' => match read_list(lexer) {
+            Ok(list) => Ok(list),
+            Err(e) => Err(format!("parsing list failed: {}", e)),
+        },
+        _ => {
+            return Err(format!("unexpected character: {:?}", c));
+        }
+    }
+}
+
 fn read_list<T: Iterator<Item = char>>(iter: &mut Peekable<T>) -> Result<Rc<Object>, String> {
     let mut list_objects = Vec::new();
 
     while let Some(c) = iter.next() {
         match c {
-            '0'...'9' => match read_number(c, iter) {
-                Ok(integer) => {
-                    list_objects.push(Rc::new(Object::Integer(integer)));
-                }
-                Err(e) => {
-                    return Err(format!("parsing number failed: {}", e));
-                }
-            },
             '(' => match read_list(iter) {
                 Ok(sub_list) => {
                     list_objects.push(sub_list);
@@ -110,9 +121,14 @@ fn read_list<T: Iterator<Item = char>>(iter: &mut Peekable<T>) -> Result<Rc<Obje
             ' ' => {
                 continue;
             }
-            _ => {
-                return Err(format!("unexpected character: {:?}", c));
-            }
+            _ => match read_object(c, iter) {
+                Ok(object) => {
+                    list_objects.push(object);
+                }
+                Err(e) => {
+                    return Err(format!("parsing object failed: {}", e));
+                }
+            },
         }
     }
 
