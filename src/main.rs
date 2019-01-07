@@ -86,10 +86,7 @@ fn read_number<T: Iterator<Item = char>>(
     Ok(number)
 }
 
-fn read_list<T: Iterator<Item = char>>(
-    c: char,
-    iter: &mut Peekable<T>,
-) -> Result<Rc<Object>, String> {
+fn read_list<T: Iterator<Item = char>>(iter: &mut Peekable<T>) -> Result<Rc<Object>, String> {
     let mut list = Rc::new(Object::Nil);
 
     while let Some(c) = iter.next() {
@@ -102,7 +99,7 @@ fn read_list<T: Iterator<Item = char>>(
                     return Err(format!("parsing number failed: {}", e));
                 }
             },
-            '(' => match read_list(c, iter) {
+            '(' => match read_list(iter) {
                 Ok(sub_list) => {
                     list = cons(sub_list, list);
                 }
@@ -139,7 +136,7 @@ fn read(code: &str) -> Result<Vec<Rc<Object>>, String> {
                     return Err(format!("parsing number failed: {}", e));
                 }
             },
-            '(' => match read_list(c, &mut lexer) {
+            '(' => match read_list(&mut lexer) {
                 Ok(list) => {
                     objects.push(list);
                 }
