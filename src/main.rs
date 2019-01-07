@@ -84,13 +84,13 @@ fn read_number<T: Iterator<Item = char>>(
 }
 
 fn read_list<T: Iterator<Item = char>>(iter: &mut Peekable<T>) -> Result<Rc<Object>, String> {
-    let mut list = Rc::new(Object::Nil);
+    let mut list_objects = Vec::new();
 
     while let Some(c) = iter.next() {
         match c {
             '0'...'9' => match read_number(c, iter) {
                 Ok(integer) => {
-                    list = cons(Rc::new(Object::Integer(integer)), list);
+                    list_objects.push(Rc::new(Object::Integer(integer)));
                 }
                 Err(e) => {
                     return Err(format!("parsing number failed: {}", e));
@@ -98,7 +98,7 @@ fn read_list<T: Iterator<Item = char>>(iter: &mut Peekable<T>) -> Result<Rc<Obje
             },
             '(' => match read_list(iter) {
                 Ok(sub_list) => {
-                    list = cons(sub_list, list);
+                    list_objects.push(sub_list);
                 }
                 Err(e) => {
                     return Err(format!("parsing list failed: {}", e));
@@ -116,6 +116,10 @@ fn read_list<T: Iterator<Item = char>>(iter: &mut Peekable<T>) -> Result<Rc<Obje
         }
     }
 
+    let mut list = Rc::new(Object::Nil);
+    for obj in list_objects.iter().rev() {
+        list = cons(obj.clone(), list);
+    }
     Ok(list)
 }
 
@@ -218,6 +222,9 @@ mod tests {
 
         let list = objects.first().unwrap();
         assert!(list.is_pair());
+        assert_eq!(*car(list.clone()).deref(), Object::Integer(1));
+        assert_eq!(*car(cdr(list.clone())).deref(), Object::Integer(2));
+        assert_eq!(*car(cdr(cdr(list.clone()))).deref(), Object::Integer(3));
     }
 }
 
