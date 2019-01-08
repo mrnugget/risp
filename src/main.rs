@@ -6,21 +6,21 @@ use std::ops::Deref;
 use std::rc::Rc;
 
 #[derive(Debug, PartialEq)]
-enum Object {
+pub enum Object {
     Nil,
     Pair { car: Rc<Object>, cdr: Rc<Object> },
     Integer(i64),
 }
 
 impl Object {
-    fn is_nil(&self) -> bool {
+    pub fn is_nil(&self) -> bool {
         match self {
             Object::Nil => true,
             _ => false,
         }
     }
 
-    fn is_pair(&self) -> bool {
+    pub fn is_pair(&self) -> bool {
         match self {
             Object::Pair {
                 car: _car,
@@ -30,7 +30,7 @@ impl Object {
         }
     }
 
-    fn is_integer(&self) -> bool {
+    pub fn is_integer(&self) -> bool {
         match self {
             Object::Integer(_) => true,
             _ => false,
@@ -48,21 +48,21 @@ impl fmt::Display for Object {
     }
 }
 
-fn cons(car: Rc<Object>, cdr: Rc<Object>) -> Rc<Object> {
+pub fn cons(car: Rc<Object>, cdr: Rc<Object>) -> Rc<Object> {
     Rc::new(Object::Pair {
         car: car.clone(),
         cdr: cdr.clone(),
     })
 }
 
-fn car(pair: Rc<Object>) -> Rc<Object> {
+pub fn car(pair: Rc<Object>) -> Rc<Object> {
     match pair.deref() {
         Object::Pair { car, cdr: _cdr } => car.clone(),
         _ => Rc::new(Object::Nil),
     }
 }
 
-fn cdr(pair: Rc<Object>) -> Rc<Object> {
+pub fn cdr(pair: Rc<Object>) -> Rc<Object> {
     match pair.deref() {
         Object::Pair { car: _car, cdr } => cdr.clone(),
         _ => Rc::new(Object::Nil),
@@ -238,9 +238,22 @@ mod tests {
 
         let list = objects.first().unwrap();
         assert!(list.is_pair());
-        assert_eq!(*car(list.clone()).deref(), Object::Integer(1));
-        assert_eq!(*car(cdr(list.clone())).deref(), Object::Integer(2));
-        assert_eq!(*car(cdr(cdr(list.clone()))).deref(), Object::Integer(3));
+        assert_eq!(*car(list.clone()), Object::Integer(1));
+        assert_eq!(*car(cdr(list.clone())), Object::Integer(2));
+        assert_eq!(*car(cdr(cdr(list.clone()))), Object::Integer(3));
+    }
+
+    #[test]
+    fn dereferencing() {
+        let pair = Rc::new(Object::Pair {
+            car: Rc::new(Object::Integer(1)),
+            cdr: Rc::new(Object::Nil),
+        });
+
+        assert_eq!(*car(pair.clone()), Object::Integer(1));
+
+        let number = Rc::new(Object::Integer(4));
+        assert_eq!(*number, Object::Integer(4));
     }
 }
 
