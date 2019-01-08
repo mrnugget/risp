@@ -72,9 +72,13 @@ pub fn cdr(pair: Rc<Object>) -> Rc<Object> {
 fn read_integer<T: Iterator<Item = char>>(
     c: char,
     iter: &mut Peekable<T>,
-) -> Result<Rc<Object>, std::num::ParseIntError> {
-    let mut number = c.to_string().parse::<i64>()?;
-
+) -> Result<Rc<Object>, String> {
+    let mut number = match c.to_string().parse::<i64>() {
+        Ok(number) => number,
+        Err(e) => {
+            return Err(format!("error parsing number: {:?}", e));
+        }
+    };
     while let Some(Ok(digit)) = iter.peek().map(|c| c.to_string().parse::<i64>()) {
         number = number * 10 + digit;
         iter.next();
@@ -88,17 +92,9 @@ fn read_object<T: Iterator<Item = char>>(
     lexer: &mut Peekable<T>,
 ) -> Result<Rc<Object>, String> {
     match c {
-        '0'...'9' => match read_integer(c, lexer) {
-            Ok(integer) => Ok(integer),
-            Err(e) => Err(format!("parsing number failed: {}", e)),
-        },
-        '(' => match read_list(lexer) {
-            Ok(list) => Ok(list),
-            Err(e) => Err(format!("parsing list failed: {}", e)),
-        },
-        _ => {
-            return Err(format!("unexpected character: {:?}", c));
-        }
+        '0'...'9' => read_integer(c, lexer),
+        '(' => read_list(lexer),
+        _ => Err(format!("unexpected character: {:?}", c)),
     }
 }
 
@@ -132,11 +128,12 @@ fn read_list<T: Iterator<Item = char>>(iter: &mut Peekable<T>) -> Result<Rc<Obje
         }
     }
 
-    let mut list = Rc::new(Object::Nil);
-    for obj in list_objects.iter().rev() {
-        list = cons(obj.clone(), list);
-    }
-    Ok(list)
+    let reversed = list_objects
+        .iter()
+        .rev()
+        .fold(Rc::new(Object::Nil), |acc, o| cons(o.clone(), acc));
+
+    Ok(reversed)
 }
 
 fn read(code: &str) -> Result<Vec<Rc<Object>>, String> {
