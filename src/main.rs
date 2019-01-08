@@ -69,10 +69,10 @@ pub fn cdr(pair: Rc<Object>) -> Rc<Object> {
     }
 }
 
-fn read_number<T: Iterator<Item = char>>(
+fn read_integer<T: Iterator<Item = char>>(
     c: char,
     iter: &mut Peekable<T>,
-) -> Result<i64, std::num::ParseIntError> {
+) -> Result<Rc<Object>, std::num::ParseIntError> {
     let mut number = c.to_string().parse::<i64>()?;
 
     while let Some(Ok(digit)) = iter.peek().map(|c| c.to_string().parse::<i64>()) {
@@ -80,7 +80,7 @@ fn read_number<T: Iterator<Item = char>>(
         iter.next();
     }
 
-    Ok(number)
+    Ok(Rc::new(Object::Integer(number)))
 }
 
 fn read_object<T: Iterator<Item = char>>(
@@ -88,8 +88,8 @@ fn read_object<T: Iterator<Item = char>>(
     lexer: &mut Peekable<T>,
 ) -> Result<Rc<Object>, String> {
     match c {
-        '0'...'9' => match read_number(c, lexer) {
-            Ok(integer) => Ok(Rc::new(Object::Integer(integer))),
+        '0'...'9' => match read_integer(c, lexer) {
+            Ok(integer) => Ok(integer),
             Err(e) => Err(format!("parsing number failed: {}", e)),
         },
         '(' => match read_list(lexer) {
