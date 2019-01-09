@@ -36,6 +36,37 @@ impl Object {
             _ => false,
         }
     }
+
+    pub fn set_cdr(&mut self, new_cdr: Rc<Object>) -> bool {
+        match *self {
+            Object::Pair {
+                car: _,
+                ref mut cdr,
+            } => {
+                *cdr = new_cdr;
+                true
+            }
+            _ => false,
+        }
+    }
+
+    pub fn set_last_cdr(&mut self, new_cdr: Rc<Object>) {
+        match *self {
+            Object::Pair {
+                car: _,
+                ref mut cdr,
+            } => {
+                if cdr.is_nil() {
+                    self.set_cdr(new_cdr);
+                } else {
+                    Rc::get_mut(cdr).unwrap().set_last_cdr(new_cdr);
+                }
+            }
+            _ => {
+                return;
+            }
+        }
+    }
 }
 
 impl fmt::Display for Object {
@@ -98,7 +129,7 @@ fn read_object<T: Iterator<Item = char>>(lexer: &mut Peekable<T>) -> Result<Rc<O
 }
 
 fn read_list<T: Iterator<Item = char>>(lexer: &mut Peekable<T>) -> Result<Rc<Object>, String> {
-    let mut list_objects = Vec::new();
+    let mut list = Rc::new(Object::Nil);
 
     lexer.next();
 
@@ -112,7 +143,13 @@ fn read_list<T: Iterator<Item = char>>(lexer: &mut Peekable<T>) -> Result<Rc<Obj
             }
             '(' => match read_list(lexer) {
                 Ok(sub_list) => {
-                    list_objects.push(sub_list);
+                    if list.is_pair() {
+                        Rc::get_mut(&mut list)
+                            .unwrap()
+                            .set_last_cdr(cons(sub_list, Rc::new(Object::Nil)));
+                    } else {
+                        list = cons(sub_list, Rc::new(Object::Nil));
+                    };
                 }
                 Err(e) => {
                     return Err(format!("parsing list failed: {}", e));
@@ -120,7 +157,13 @@ fn read_list<T: Iterator<Item = char>>(lexer: &mut Peekable<T>) -> Result<Rc<Obj
             },
             _ => match read_object(lexer) {
                 Ok(object) => {
-                    list_objects.push(object);
+                    if list.is_pair() {
+                        Rc::get_mut(&mut list)
+                            .unwrap()
+                            .set_last_cdr(cons(object, Rc::new(Object::Nil)));
+                    } else {
+                        list = cons(object, Rc::new(Object::Nil));
+                    };
                 }
                 Err(e) => {
                     return Err(format!("parsing object failed: {}", e));
@@ -129,12 +172,7 @@ fn read_list<T: Iterator<Item = char>>(lexer: &mut Peekable<T>) -> Result<Rc<Obj
         }
     }
 
-    let reversed = list_objects
-        .iter()
-        .rev()
-        .fold(Rc::new(Object::Nil), |acc, o| cons(o.clone(), acc));
-
-    Ok(reversed)
+    Ok(list)
 }
 
 fn read(code: &str) -> Result<Vec<Rc<Object>>, String> {
@@ -206,7 +244,6 @@ mod tests {
     #[test]
     fn read_multiple_numbers() {
         let objects = read("5 5 5 5").unwrap();
-        println!("objects={:?}", objects);
         assert_eq!(objects.len(), 4);
 
         let number = objects.first().unwrap();
