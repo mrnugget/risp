@@ -142,20 +142,14 @@ fn read(code: &str) -> Result<Vec<Rc<Object>>, String> {
     let mut lexer = code.chars().peekable();
     let mut objects = Vec::new();
 
-    while let Some(c) = lexer.peek() {
-        if *c == ' ' || *c == '\n' {
+    while let Some(&c) = lexer.peek() {
+        if c == ' ' || c == '\n' {
             lexer.next();
             continue;
         }
 
-        match read_object(&mut lexer) {
-            Ok(obj) => {
-                objects.push(obj);
-            }
-            Err(e) => {
-                return Err(format!("parsing number failed: {}", e));
-            }
-        }
+        let object = read_object(&mut lexer)?;
+        objects.push(object);
     }
 
     Ok(objects)
