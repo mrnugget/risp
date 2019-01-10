@@ -114,6 +114,7 @@ fn read_list<T: Iterator<Item = char>>(lexer: &mut Peekable<T>) -> Result<Rc<Obj
 
     while let Some(&c) = lexer.peek() {
         if c == ')' {
+            lexer.next();
             break;
         }
         if c == ' ' || c == '\n' {
@@ -222,6 +223,26 @@ mod tests {
         assert_eq!(*car(list.clone()), Object::Integer(1));
         assert_eq!(*car(cdr(list.clone())), Object::Integer(2));
         assert_eq!(*car(cdr(cdr(list.clone()))), Object::Integer(3));
+    }
+
+    #[test]
+    fn reading_lists_of_lists() {
+        let objects = read("(1 (2 3 (4 5)))").unwrap();
+        assert_eq!(objects.len(), 1);
+
+        let list = objects.first().unwrap();
+        assert!(list.is_pair());
+        assert_eq!(*car(list.clone()), Object::Integer(1));
+        assert_eq!(*car(car(cdr(list.clone()))), Object::Integer(2));
+        assert_eq!(*car(cdr(car(cdr(list.clone())))), Object::Integer(3));
+        assert_eq!(
+            *car(car(cdr(cdr(car(cdr(list.clone())))))),
+            Object::Integer(4)
+        );
+        assert_eq!(
+            *car(cdr(car(cdr(cdr(car(cdr(list.clone()))))))),
+            Object::Integer(5)
+        );
     }
 
     #[test]
