@@ -8,7 +8,7 @@ use std::rc::Rc;
 #[derive(Debug, PartialEq)]
 pub enum Object {
     Nil,
-    Pair { car: Rc<Object>, cdr: Rc<Object> },
+    Pair(Rc<Object>, Rc<Object>),
     Integer(i64),
 }
 
@@ -22,10 +22,7 @@ impl Object {
 
     pub fn is_pair(&self) -> bool {
         match self {
-            Object::Pair {
-                car: _car,
-                cdr: _cdr,
-            } => true,
+            Object::Pair(_, _) => true,
             _ => false,
         }
     }
@@ -39,10 +36,7 @@ impl Object {
 
     pub fn set_cdr(&mut self, new_cdr: Rc<Object>) -> bool {
         match *self {
-            Object::Pair {
-                car: _,
-                ref mut cdr,
-            } => {
+            Object::Pair(_, ref mut cdr) => {
                 *cdr = new_cdr;
                 true
             }
@@ -52,10 +46,7 @@ impl Object {
 
     pub fn set_last_cdr(&mut self, new_cdr: Rc<Object>) {
         match *self {
-            Object::Pair {
-                car: _,
-                ref mut cdr,
-            } => {
+            Object::Pair(_, ref mut cdr) => {
                 if cdr.is_nil() {
                     self.set_cdr(new_cdr);
                 } else {
@@ -73,29 +64,26 @@ impl fmt::Display for Object {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Object::Nil => write!(f, "<nil>"),
-            Object::Pair { car, cdr } => write!(f, "({} . {})", car, cdr),
+            Object::Pair(car, cdr) => write!(f, "({} . {})", car, cdr),
             Object::Integer(num) => write!(f, "{}", num),
         }
     }
 }
 
 pub fn cons(car: Rc<Object>, cdr: Rc<Object>) -> Rc<Object> {
-    Rc::new(Object::Pair {
-        car: car.clone(),
-        cdr: cdr.clone(),
-    })
+    Rc::new(Object::Pair(car.clone(), cdr.clone()))
 }
 
 pub fn car(pair: Rc<Object>) -> Rc<Object> {
     match pair.deref() {
-        Object::Pair { car, cdr: _cdr } => car.clone(),
+        Object::Pair(car, _) => car.clone(),
         _ => Rc::new(Object::Nil),
     }
 }
 
 pub fn cdr(pair: Rc<Object>) -> Rc<Object> {
     match pair.deref() {
-        Object::Pair { car: _car, cdr } => cdr.clone(),
+        Object::Pair(_, cdr) => cdr.clone(),
         _ => Rc::new(Object::Nil),
     }
 }
@@ -209,7 +197,7 @@ mod tests {
 
         let pair = cons(four.clone(), five.clone());
         assert!(pair.is_pair());
-        if let Object::Pair { car, cdr } = pair.deref() {
+        if let Object::Pair(car, cdr) = pair.deref() {
             assert_eq!(car.deref(), four.deref());
             assert_eq!(cdr.deref(), five.deref());
         }
@@ -269,10 +257,10 @@ mod tests {
 
     #[test]
     fn dereferencing() {
-        let pair = Rc::new(Object::Pair {
-            car: Rc::new(Object::Integer(1)),
-            cdr: Rc::new(Object::Nil),
-        });
+        let pair = Rc::new(Object::Pair(
+            Rc::new(Object::Integer(1)),
+            Rc::new(Object::Nil),
+        ));
 
         assert_eq!(*car(pair.clone()), Object::Integer(1));
 
