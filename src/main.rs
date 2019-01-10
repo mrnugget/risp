@@ -112,43 +112,27 @@ fn read_list<T: Iterator<Item = char>>(lexer: &mut Peekable<T>) -> Result<Rc<Obj
 
     lexer.next();
 
-    while let Some(c) = lexer.peek() {
-        match c {
-            ')' => {
-                break;
-            }
-            ' ' | '\n' => {
-                continue;
-            }
-            '(' => match read_list(lexer) {
-                Ok(sub_list) => {
-                    if list.is_pair() {
-                        Rc::get_mut(&mut list)
-                            .unwrap()
-                            .set_last_cdr(cons(sub_list, Rc::new(Object::Nil)));
-                    } else {
-                        list = cons(sub_list, Rc::new(Object::Nil));
-                    };
-                }
-                Err(e) => {
-                    return Err(format!("parsing list failed: {}", e));
-                }
-            },
-            _ => match read_object(lexer) {
-                Ok(object) => {
-                    if list.is_pair() {
-                        Rc::get_mut(&mut list)
-                            .unwrap()
-                            .set_last_cdr(cons(object, Rc::new(Object::Nil)));
-                    } else {
-                        list = cons(object, Rc::new(Object::Nil));
-                    };
-                }
-                Err(e) => {
-                    return Err(format!("parsing object failed: {}", e));
-                }
-            },
+    while let Some(&c) = lexer.peek() {
+        if c == ')' {
+            break;
         }
+        if c == ' ' || c == '\n' {
+            continue;
+        }
+
+        let element = if c == '(' {
+            read_list(lexer)?
+        } else {
+            read_object(lexer)?
+        };
+
+        if list.is_pair() {
+            Rc::get_mut(&mut list)
+                .unwrap()
+                .set_last_cdr(cons(element, Rc::new(Object::Nil)));
+        } else {
+            list = cons(element, Rc::new(Object::Nil));
+        };
     }
 
     Ok(list)
