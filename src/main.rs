@@ -34,27 +34,18 @@ impl Object {
         }
     }
 
-    pub fn set_cdr(&mut self, new_cdr: Rc<Object>) -> bool {
-        match *self {
-            Object::Pair(_, ref mut cdr) => {
-                *cdr = new_cdr;
-                true
-            }
-            _ => false,
+    pub fn set_cdr(&mut self, new_cdr: Rc<Object>) {
+        if let Object::Pair(_, ref mut cdr) = *self {
+            *cdr = new_cdr;
         }
     }
 
     pub fn set_last_cdr(&mut self, new_cdr: Rc<Object>) {
-        match *self {
-            Object::Pair(_, ref mut cdr) => {
-                if cdr.is_nil() {
-                    self.set_cdr(new_cdr);
-                } else {
-                    Rc::get_mut(cdr).unwrap().set_last_cdr(new_cdr);
-                }
-            }
-            _ => {
-                return;
+        if let Object::Pair(_, ref mut cdr) = *self {
+            if cdr.is_nil() {
+                self.set_cdr(new_cdr);
+            } else {
+                Rc::get_mut(cdr).unwrap().set_last_cdr(new_cdr);
             }
         }
     }
