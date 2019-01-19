@@ -10,6 +10,7 @@ pub enum Object {
     Nil,
     Pair(Rc<Object>, Rc<Object>),
     Integer(i64),
+    Symbol(String),
 }
 
 impl Object {
@@ -30,6 +31,13 @@ impl Object {
     pub fn is_integer(&self) -> bool {
         match self {
             Object::Integer(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_symbol(&self) -> bool {
+        match self {
+            Object::Symbol(_) => true,
             _ => false,
         }
     }
@@ -57,6 +65,7 @@ impl fmt::Display for Object {
             Object::Nil => write!(f, "<nil>"),
             Object::Pair(car, cdr) => write!(f, "({} . {})", car, cdr),
             Object::Integer(num) => write!(f, "{}", num),
+            Object::Symbol(sym) => write!(f, "{}", sym),
         }
     }
 }
@@ -99,9 +108,30 @@ fn read_integer<T: Iterator<Item = char>>(lexer: &mut Peekable<T>) -> Result<Rc<
     Ok(Rc::new(Object::Integer(number)))
 }
 
+fn read_symbol<T: Iterator<Item = char>>(lexer: &mut Peekable<T>) -> Result<Rc<Object>, String> {
+    let c = lexer.next().unwrap();
+
+    let mut number = match c.to_string().parse::<i64>() {
+        Ok(number) => number,
+        Err(e) => {
+            return Err(format!("error parsing number: {:?}", e));
+        }
+    };
+
+    while let Some(Ok(digit)) = lexer.peek().map(|c| c.to_string().parse::<i64>()) {
+        number = number * 10 + digit;
+        lexer.next();
+    }
+
+    lexer.next();
+
+    Ok(Rc::new(Object::Integer(number)))
+}
+
 fn read_object<T: Iterator<Item = char>>(lexer: &mut Peekable<T>) -> Result<Rc<Object>, String> {
     match lexer.peek() {
         Some('0'...'9') => read_integer(lexer),
+        Some('a'...'Z') => read_symbol(lexer),
         Some('(') => read_list(lexer),
         c => Err(format!("unexpected character: {:?}", c)),
     }
@@ -243,6 +273,16 @@ mod tests {
             *car(cdr(car(cdr(cdr(car(cdr(list.clone()))))))),
             Object::Integer(5)
         );
+    }
+
+    #[test]
+    fn reading_symbols() {
+        let objects = read("(list)").unwrap();
+        assert_eq!(objects.len(), 1);
+
+        let list = objects.first().unwrap();
+        assert!(list.is_pair());
+        assert_eq!(*car(list.clone()), Object::Symbol(String::from("list")));
     }
 
     #[test]
