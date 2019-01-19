@@ -110,29 +110,24 @@ fn read_integer<T: Iterator<Item = char>>(lexer: &mut Peekable<T>) -> Result<Rc<
 
 fn read_symbol<T: Iterator<Item = char>>(lexer: &mut Peekable<T>) -> Result<Rc<Object>, String> {
     let c = lexer.next().unwrap();
+    let mut result = c.to_string();
 
-    let mut number = match c.to_string().parse::<i64>() {
-        Ok(number) => number,
-        Err(e) => {
-            return Err(format!("error parsing number: {:?}", e));
+    while let Some(c) = lexer.peek() {
+        if !c.is_ascii_alphanumeric() && !(*c == '-') {
+            break;
         }
-    };
-
-    while let Some(Ok(digit)) = lexer.peek().map(|c| c.to_string().parse::<i64>()) {
-        number = number * 10 + digit;
-        lexer.next();
+        let c = lexer.next().unwrap();
+        result.push(c);
     }
 
-    lexer.next();
-
-    Ok(Rc::new(Object::Integer(number)))
+    Ok(Rc::new(Object::Symbol(result)))
 }
 
 fn read_object<T: Iterator<Item = char>>(lexer: &mut Peekable<T>) -> Result<Rc<Object>, String> {
     match lexer.peek() {
         Some('0'...'9') => read_integer(lexer),
-        Some('a'...'Z') => read_symbol(lexer),
         Some('(') => read_list(lexer),
+        Some('!'...'z') => read_symbol(lexer),
         c => Err(format!("unexpected character: {:?}", c)),
     }
 }
@@ -283,6 +278,13 @@ mod tests {
         let list = objects.first().unwrap();
         assert!(list.is_pair());
         assert_eq!(*car(list.clone()), Object::Symbol(String::from("list")));
+
+        let objects = read("(list-one)").unwrap();
+        assert_eq!(objects.len(), 1);
+
+        let list = objects.first().unwrap();
+        assert!(list.is_pair());
+        assert_eq!(*car(list.clone()), Object::Symbol(String::from("list-one")));
     }
 
     #[test]
