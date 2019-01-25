@@ -108,12 +108,20 @@ fn read_integer<T: Iterator<Item = char>>(lexer: &mut Peekable<T>) -> Result<Rc<
     Ok(Rc::new(Object::Integer(number)))
 }
 
+fn valid_symbol_char(c: &char) -> bool {
+    if *c == '(' || *c == ')' {
+        return false;
+    }
+
+    c.is_ascii_alphanumeric() || c.is_ascii_punctuation()
+}
+
 fn read_symbol<T: Iterator<Item = char>>(lexer: &mut Peekable<T>) -> Result<Rc<Object>, String> {
     let c = lexer.next().unwrap();
     let mut result = c.to_string();
 
     while let Some(c) = lexer.peek() {
-        if !c.is_ascii_alphanumeric() && !(*c == '-') {
+        if !valid_symbol_char(c) {
             break;
         }
         let c = lexer.next().unwrap();
@@ -127,7 +135,7 @@ fn read_object<T: Iterator<Item = char>>(lexer: &mut Peekable<T>) -> Result<Rc<O
     match lexer.peek() {
         Some('0'...'9') => read_integer(lexer),
         Some('(') => read_list(lexer),
-        Some('!'...'z') => read_symbol(lexer),
+        Some(c) if valid_symbol_char(c) => read_symbol(lexer),
         c => Err(format!("unexpected character: {:?}", c)),
     }
 }
@@ -143,6 +151,7 @@ fn read_list<T: Iterator<Item = char>>(lexer: &mut Peekable<T>) -> Result<Rc<Obj
             break;
         }
         if c == ' ' || c == '\n' {
+            lexer.next();
             continue;
         }
 
@@ -271,6 +280,19 @@ mod tests {
     }
 
     #[test]
+    fn testing_valid_symbol_characters() {
+        assert!(valid_symbol_char(&'a'));
+        assert!(valid_symbol_char(&'z'));
+        assert!(valid_symbol_char(&'A'));
+        assert!(valid_symbol_char(&'Z'));
+        assert!(valid_symbol_char(&'-'));
+        assert!(valid_symbol_char(&'!'));
+        assert!(valid_symbol_char(&'+'));
+
+        assert!(!valid_symbol_char(&' '));
+    }
+
+    #[test]
     fn reading_symbols() {
         let objects = read("(list)").unwrap();
         assert_eq!(objects.len(), 1);
@@ -285,6 +307,13 @@ mod tests {
         let list = objects.first().unwrap();
         assert!(list.is_pair());
         assert_eq!(*car(list.clone()), Object::Symbol(String::from("list-one")));
+
+        let objects = read("(+ 1 2 3)").unwrap();
+        assert_eq!(objects.len(), 1);
+
+        let list = objects.first().unwrap();
+        assert!(list.is_pair());
+        assert_eq!(*car(list.clone()), Object::Symbol(String::from("+")));
     }
 
     #[test]
