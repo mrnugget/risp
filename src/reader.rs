@@ -1,7 +1,8 @@
 use std::rc::Rc;
 use std::iter::Peekable;
 
-use crate::object::*;
+use crate::object::Object;
+use crate::object;
 
 fn read_integer<T: Iterator<Item = char>>(lexer: &mut Peekable<T>) -> Result<Rc<Object>, String> {
     let c = lexer.next().unwrap();
@@ -79,9 +80,9 @@ fn read_list<T: Iterator<Item = char>>(lexer: &mut Peekable<T>) -> Result<Rc<Obj
         if list.is_pair() {
             Rc::get_mut(&mut list)
                 .unwrap()
-                .set_last_cdr(cons(element, Rc::new(Object::Nil)));
+                .set_last_cdr(object::cons(element, Rc::new(Object::Nil)));
         } else {
-            list = cons(element, Rc::new(Object::Nil));
+            list = object::cons(element, Rc::new(Object::Nil));
         };
     }
 
@@ -154,9 +155,9 @@ mod tests {
 
         let list = objects.first().unwrap();
         assert!(list.is_pair());
-        assert_eq!(*car(list.clone()), Object::Integer(1));
-        assert_eq!(*car(cdr(list.clone())), Object::Integer(2));
-        assert_eq!(*car(cdr(cdr(list.clone()))), Object::Integer(3));
+        assert_eq!(*object::car(list.clone()), Object::Integer(1));
+        assert_eq!(*object::car(object::cdr(list.clone())), Object::Integer(2));
+        assert_eq!(*object::car(object::cdr(object::cdr(list.clone()))), Object::Integer(3));
     }
 
     #[test]
@@ -166,15 +167,15 @@ mod tests {
 
         let list = objects.first().unwrap();
         assert!(list.is_pair());
-        assert_eq!(*car(list.clone()), Object::Integer(1));
-        assert_eq!(*car(car(cdr(list.clone()))), Object::Integer(2));
-        assert_eq!(*car(cdr(car(cdr(list.clone())))), Object::Integer(3));
+        assert_eq!(*object::car(list.clone()), Object::Integer(1));
+        assert_eq!(*object::car(object::car(object::cdr(list.clone()))), Object::Integer(2));
+        assert_eq!(*object::car(object::cdr(object::car(object::cdr(list.clone())))), Object::Integer(3));
         assert_eq!(
-            *car(car(cdr(cdr(car(cdr(list.clone())))))),
+            *object::car(object::car(object::cdr(object::cdr(object::car(object::cdr(list.clone())))))),
             Object::Integer(4)
         );
         assert_eq!(
-            *car(cdr(car(cdr(cdr(car(cdr(list.clone()))))))),
+            *object::car(object::cdr(object::car(object::cdr(object::cdr(object::car(object::cdr(list.clone()))))))),
             Object::Integer(5)
         );
     }
@@ -199,21 +200,21 @@ mod tests {
 
         let list = objects.first().unwrap();
         assert!(list.is_pair());
-        assert_eq!(*car(list.clone()), Object::Symbol(String::from("list")));
+        assert_eq!(*object::car(list.clone()), Object::Symbol(String::from("list")));
 
         let objects = read("(list-one)").unwrap();
         assert_eq!(objects.len(), 1);
 
         let list = objects.first().unwrap();
         assert!(list.is_pair());
-        assert_eq!(*car(list.clone()), Object::Symbol(String::from("list-one")));
+        assert_eq!(*object::car(list.clone()), Object::Symbol(String::from("list-one")));
 
         let objects = read("(+ 1 2 3)").unwrap();
         assert_eq!(objects.len(), 1);
 
         let list = objects.first().unwrap();
         assert!(list.is_pair());
-        assert_eq!(*car(list.clone()), Object::Symbol(String::from("+")));
+        assert_eq!(*object::car(list.clone()), Object::Symbol(String::from("+")));
     }
 }
 
