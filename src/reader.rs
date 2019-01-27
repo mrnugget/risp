@@ -156,7 +156,7 @@ mod tests {
         let list = objects.first().unwrap();
         assert!(list.is_pair());
         assert_eq!(*object::car(list.clone()), Object::Integer(1));
-        assert_eq!(*object::car(object::cdr(list.clone())), Object::Integer(2));
+        assert_eq!(*object::cadr(list.clone()), Object::Integer(2));
         assert_eq!(*object::car(object::cdr(object::cdr(list.clone()))), Object::Integer(3));
     }
 
@@ -168,14 +168,14 @@ mod tests {
         let list = objects.first().unwrap();
         assert!(list.is_pair());
         assert_eq!(*object::car(list.clone()), Object::Integer(1));
-        assert_eq!(*object::car(object::car(object::cdr(list.clone()))), Object::Integer(2));
-        assert_eq!(*object::car(object::cdr(object::car(object::cdr(list.clone())))), Object::Integer(3));
+        assert_eq!(*object::caadr(list.clone()), Object::Integer(2));
+        assert_eq!(*object::cadr(object::cadr(list.clone())), Object::Integer(3));
         assert_eq!(
-            *object::car(object::car(object::cdr(object::cdr(object::car(object::cdr(list.clone())))))),
+            *object::caadr(object::cdr(object::cadr(list.clone()))),
             Object::Integer(4)
         );
         assert_eq!(
-            *object::car(object::cdr(object::car(object::cdr(object::cdr(object::car(object::cdr(list.clone()))))))),
+            *object::cadr(object::cadr(object::cdr(object::cadr(list.clone())))),
             Object::Integer(5)
         );
     }

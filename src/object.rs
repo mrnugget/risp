@@ -85,6 +85,13 @@ pub fn cdr(pair: Rc<Object>) -> Rc<Object> {
     }
 }
 
+pub fn cadr(pair: Rc<Object>) -> Rc<Object> {
+    car(cdr(pair))
+}
+pub fn caadr(pair: Rc<Object>) -> Rc<Object> {
+    car(car(cdr(pair)))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
