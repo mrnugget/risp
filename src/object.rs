@@ -2,7 +2,7 @@ use std::fmt;
 use std::ops::Deref;
 use std::rc::Rc;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Hash)]
 pub enum Object {
     Nil,
     Pair(Rc<Object>, Rc<Object>),
@@ -28,13 +28,6 @@ impl Object {
     pub fn is_integer(&self) -> bool {
         match self {
             Object::Integer(_) => true,
-            _ => false,
-        }
-    }
-
-    pub fn is_symbol(&self) -> bool {
-        match self {
-            Object::Symbol(_) => true,
             _ => false,
         }
     }
@@ -88,13 +81,49 @@ pub fn cdr(pair: Rc<Object>) -> Rc<Object> {
 pub fn cadr(pair: Rc<Object>) -> Rc<Object> {
     car(cdr(pair))
 }
+
 pub fn caadr(pair: Rc<Object>) -> Rc<Object> {
     car(car(cdr(pair)))
+}
+
+pub fn sum(pair: Rc<Object>) -> Rc<Object> {
+    let mut result = 0;
+    match car(pair.clone()).deref() {
+        Object::Integer(value) => {
+            result += value;
+        }
+        _ => {
+            return Rc::new(Object::Nil);
+        }
+    }
+
+    if let Object::Integer(value) = sum(cdr(pair.clone())).deref() {
+        result += value;
+    }
+
+    Rc::new(Object::Integer(result))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_list_sum() {
+        let list = Rc::new(Object::Pair(
+            Rc::new(Object::Integer(1)),
+            Rc::new(Object::Pair(
+                Rc::new(Object::Integer(2)),
+                Rc::new(Object::Pair(
+                    Rc::new(Object::Integer(3)),
+                    Rc::new(Object::Nil),
+                )),
+            )),
+        ));
+
+        let sum_result = sum(list);
+        assert_eq!(*sum_result, Object::Integer(6));
+    }
 
     #[test]
     fn test_consing_objects() {

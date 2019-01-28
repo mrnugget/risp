@@ -217,4 +217,3 @@ mod tests {
         assert_eq!(*object::car(list.clone()), Object::Symbol(String::from("+")));
     }
 }
-

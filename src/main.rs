@@ -3,6 +3,7 @@ use std::io::prelude::*;
 
 mod object;
 mod reader;
+mod evaluator;
 
 fn main() -> io::Result<()> {
     const PROMPT: &'static str = "> ";
