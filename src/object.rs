@@ -90,6 +90,7 @@ pub fn caadr(pair: Rc<Object>) -> Rc<Object> {
     car(car(cdr(pair)))
 }
 
+// TODO: This can merged with `multiply` into a generic `fold_integers`
 pub fn sum(pair: Rc<Object>) -> Rc<Object> {
     let mut result = 0;
     match car(pair.clone()).deref() {
@@ -108,6 +109,7 @@ pub fn sum(pair: Rc<Object>) -> Rc<Object> {
     Rc::new(Object::Integer(result))
 }
 
+// TODO: This can merged with `sum` into a generic `fold_integers`
 pub fn multiply(pair: Rc<Object>) -> Rc<Object> {
     let mut result = 0;
     match car(pair.clone()).deref() {
