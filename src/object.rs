@@ -2,12 +2,15 @@ use std::fmt;
 use std::ops::Deref;
 use std::rc::Rc;
 
+type BuiltinFunction = fn(Rc<Object>) -> Rc<Object>;
+
 #[derive(Debug, Eq, PartialEq, Hash)]
 pub enum Object {
     Nil,
     Pair(Rc<Object>, Rc<Object>),
     Integer(i64),
     Symbol(String),
+    Builtin(BuiltinFunction),
 }
 
 impl Object {
@@ -56,6 +59,7 @@ impl fmt::Display for Object {
             Object::Pair(car, cdr) => write!(f, "({} . {})", car, cdr),
             Object::Integer(num) => write!(f, "{}", num),
             Object::Symbol(sym) => write!(f, "{}", sym),
+            Object::Builtin(_) => write!(f, "<builtin_function>"),
         }
     }
 }

@@ -2,10 +2,39 @@ use std::collections::HashMap;
 use std::ops::Deref;
 use std::rc::Rc;
 
-use crate::object::Object;
 use crate::object;
+use crate::object::Object;
 
-type Environment = HashMap<Rc<Object>, Rc<Object>>;
+pub struct Environment {
+    entries: HashMap<String, Rc<Object>>,
+}
+
+impl Environment {
+    fn new() -> Environment {
+        let mut env = Environment {
+            entries: HashMap::new(),
+        };
+
+        let predefined_functions = &[("+", Rc::new(Object::Builtin(object::sum)))];
+
+        for item in predefined_functions.iter() {
+            let (name, ref func) = *item;
+            env.define(name.to_string(), func.clone()).unwrap();
+        }
+
+        env
+    }
+
+    fn define(&mut self, key: String, obj: Rc<Object>) -> Result<(), ()> {
+        if self.entries.contains_key(&key) {
+            // TODO: we need a real error here
+            return Err(());
+        } else {
+            self.entries.insert(key, obj);
+            Ok(())
+        }
+    }
+}
 
 pub fn apply(proc: Rc<Object>, args: Rc<Object>, _env: Environment) -> Rc<Object> {
     if let Object::Symbol(s) = proc.deref() {
@@ -24,6 +53,7 @@ pub fn eval(exp: Rc<Object>, env: Environment) -> Rc<Object> {
         Object::Nil => exp,
         Object::Integer(_) => exp,
         Object::Symbol(_) => exp,
+        Object::Builtin(_) => exp,
         Object::Pair(car, cdr) => apply(car.clone(), cdr.clone(), env),
     }
 }
@@ -42,7 +72,7 @@ mod tests {
         let exp = objects.first().unwrap();
         assert!(exp.is_pair());
 
-        let env = HashMap::new();
+        let env = Environment::new();
         let result = eval(exp.clone(), env);
         assert!(result.is_integer());
         assert_eq!(*result, Object::Integer(6));
