@@ -34,27 +34,31 @@ impl Environment {
             Ok(())
         }
     }
+
+    fn get(&self, key: &String) -> Rc<Object> {
+        match self.entries.get(key) {
+            Some(val) => val.clone(),
+            None => Rc::new(Object::Nil),
+        }
+    }
 }
 
-pub fn apply(proc: Rc<Object>, args: Rc<Object>, _env: Environment) -> Rc<Object> {
-    if let Object::Symbol(s) = proc.deref() {
-        if s != "+" {
-            Rc::new(Object::Nil);
-        }
-
-        return object::sum(args);
+pub fn apply(proc: Rc<Object>, args: Rc<Object>) -> Rc<Object> {
+    if let Object::Builtin(func) = proc.deref() {
+        return func(args);
     }
 
     Rc::new(Object::Nil)
 }
 
-pub fn eval(exp: Rc<Object>, env: Environment) -> Rc<Object> {
+pub fn eval(exp: Rc<Object>, env: &Environment) -> Rc<Object> {
     match exp.deref() {
-        Object::Nil => exp,
-        Object::Integer(_) => exp,
-        Object::Symbol(_) => exp,
-        Object::Builtin(_) => exp,
-        Object::Pair(car, cdr) => apply(car.clone(), cdr.clone(), env),
+        Object::Nil | Object::Integer(_) | Object::Builtin(_) => exp,
+        Object::Symbol(name) => env.get(name),
+        Object::Pair(car, cdr) => {
+            let proc = eval(car.clone(), env);
+            apply(proc, cdr.clone())
+        }
     }
 }
 
@@ -73,7 +77,7 @@ mod tests {
         assert!(exp.is_pair());
 
         let env = Environment::new();
-        let result = eval(exp.clone(), env);
+        let result = eval(exp.clone(), &env);
         assert!(result.is_integer());
         assert_eq!(*result, Object::Integer(6));
     }
