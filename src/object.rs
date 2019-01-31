@@ -108,6 +108,24 @@ pub fn sum(pair: Rc<Object>) -> Rc<Object> {
     Rc::new(Object::Integer(result))
 }
 
+pub fn multiply(pair: Rc<Object>) -> Rc<Object> {
+    let mut result = 0;
+    match car(pair.clone()).deref() {
+        Object::Integer(value) => {
+            result += value;
+        }
+        _ => {
+            return Rc::new(Object::Nil);
+        }
+    }
+
+    if let Object::Integer(value) = multiply(cdr(pair.clone())).deref() {
+        result *= value;
+    }
+
+    Rc::new(Object::Integer(result))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -127,6 +145,23 @@ mod tests {
 
         let sum_result = sum(list);
         assert_eq!(*sum_result, Object::Integer(6));
+    }
+
+    #[test]
+    fn test_list_multiply() {
+        let list = Rc::new(Object::Pair(
+            Rc::new(Object::Integer(2)),
+            Rc::new(Object::Pair(
+                Rc::new(Object::Integer(2)),
+                Rc::new(Object::Pair(
+                    Rc::new(Object::Integer(2)),
+                    Rc::new(Object::Nil),
+                )),
+            )),
+        ));
+
+        let multiply_result = multiply(list);
+        assert_eq!(*multiply_result, Object::Integer(8));
     }
 
     #[test]

@@ -15,7 +15,10 @@ impl Environment {
             entries: HashMap::new(),
         };
 
-        let predefined_functions = &[("+", Rc::new(Object::Builtin(object::sum)))];
+        let predefined_functions = &[
+            ("+", Rc::new(Object::Builtin(object::sum))),
+            ("*", Rc::new(Object::Builtin(object::multiply))),
+        ];
 
         for item in predefined_functions.iter() {
             let (name, ref func) = *item;
@@ -80,5 +83,19 @@ mod tests {
         let result = eval(exp.clone(), &env);
         assert!(result.is_integer());
         assert_eq!(*result, Object::Integer(6));
+    }
+
+    #[test]
+    fn test_eval_multiply() {
+        let objects = reader::read("(* 2 2 2 2)").unwrap();
+        assert_eq!(objects.len(), 1);
+
+        let exp = objects.first().unwrap();
+        assert!(exp.is_pair());
+
+        let env = Environment::new();
+        let result = eval(exp.clone(), &env);
+        assert!(result.is_integer());
+        assert_eq!(*result, Object::Integer(16));
     }
 }
