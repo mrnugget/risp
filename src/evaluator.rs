@@ -71,31 +71,23 @@ mod tests {
     use crate::object::Object;
     use crate::reader;
 
-    #[test]
-    fn test_eval_plus() {
-        let objects = reader::read("(+ 1 2 3)").unwrap();
-        assert_eq!(objects.len(), 1);
+    macro_rules! assert_eval {
+        ( $input:expr, $expected:expr ) => {{
+            let objects = reader::read($input).unwrap();
+            assert_eq!(objects.len(), 1);
+            let exp = objects.first().unwrap();
+            assert!(exp.is_pair());
 
-        let exp = objects.first().unwrap();
-        assert!(exp.is_pair());
-
-        let env = Environment::new();
-        let result = eval(exp.clone(), &env);
-        assert!(result.is_integer());
-        assert_eq!(*result, Object::Integer(6));
+            let env = Environment::new();
+            let result = eval(exp.clone(), &env);
+            assert_eq!(*result, $expected);
+        }};
     }
 
     #[test]
-    fn test_eval_multiply() {
-        let objects = reader::read("(* 2 2 2 2)").unwrap();
-        assert_eq!(objects.len(), 1);
-
-        let exp = objects.first().unwrap();
-        assert!(exp.is_pair());
-
-        let env = Environment::new();
-        let result = eval(exp.clone(), &env);
-        assert!(result.is_integer());
-        assert_eq!(*result, Object::Integer(16));
+    fn test_eval_builtins() {
+        assert_eval!("(+ 1 2 3)", Object::Integer(6));
+        assert_eval!("(+ 1 2 3 4 5 6)", Object::Integer(21));
+        assert_eval!("(* 2 2 2 2)", Object::Integer(16));
     }
 }
