@@ -1,9 +1,9 @@
 use std::io;
 use std::io::prelude::*;
 
+mod evaluator;
 mod object;
 mod reader;
-mod evaluator;
 
 fn main() -> io::Result<()> {
     const PROMPT: &'static str = "> ";
