@@ -1,34 +1,31 @@
 use std::collections::HashMap;
-use std::ops::Deref;
-use std::rc::Rc;
 
-use crate::object;
 use crate::object::Object;
 
 pub struct Environment {
-    entries: HashMap<String, Rc<Object>>,
+    entries: HashMap<String, Object>,
 }
 
 impl Environment {
     fn new() -> Environment {
-        let mut env = Environment {
+        let env = Environment {
             entries: HashMap::new(),
         };
 
-        let predefined_functions = &[
-            ("+", Rc::new(Object::Builtin(object::sum))),
-            ("*", Rc::new(Object::Builtin(object::multiply))),
-        ];
+        // let predefined_functions = &[
+        //     ("+", Object::Builtin(object::sum)),
+        //     ("*", Object::Builtin(object::multiply)),
+        // ];
 
-        for item in predefined_functions.iter() {
-            let (name, ref func) = *item;
-            env.define(name.to_string(), func.clone()).unwrap();
-        }
+        // for item in predefined_functions.iter() {
+        //     let (name, func) = item;
+        //     env.define(name.to_string(), func).unwrap();
+        // }
 
         env
     }
 
-    fn define(&mut self, key: String, obj: Rc<Object>) -> Result<(), ()> {
+    fn define(&mut self, key: String, obj: Object) -> Result<(), ()> {
         if self.entries.contains_key(&key) {
             // TODO: we need a real error here
             return Err(());
@@ -38,30 +35,31 @@ impl Environment {
         }
     }
 
-    fn get(&self, key: &String) -> Rc<Object> {
+    fn get(&self, key: &String) -> &Object {
         match self.entries.get(key) {
             Some(val) => val.clone(),
-            None => Rc::new(Object::Nil),
+            None => &Object::Nil,
         }
     }
 }
 
-pub fn apply(proc: Rc<Object>, args: Rc<Object>) -> Rc<Object> {
-    if let Object::Builtin(func) = proc.deref() {
-        return func(args);
-    }
+// pub fn apply(proc: &Object, args: Object) -> Object {
+//     if let Object::Builtin(func) = proc {
+//         return func(args);
+//     }
+//
+//     Object::Nil
+// }
 
-    Rc::new(Object::Nil)
-}
-
-pub fn eval(exp: Rc<Object>, env: &Environment) -> Rc<Object> {
-    match exp.deref() {
+pub fn eval<'a>(exp: &'a Object, env: &'a Environment) -> &'a Object {
+    match exp {
         Object::Nil | Object::Integer(_) | Object::Builtin(_) => exp,
         Object::Symbol(name) => env.get(name),
-        Object::Pair(car, cdr) => {
-            let proc = eval(car.clone(), env);
-            apply(proc, cdr.clone())
-        }
+        Object::List(ref elems) => &elems[0],
+        // Object::List(ref elems) => {
+        //     let proc = eval(&elems[0], env);
+        //     &apply(proc, &elems[1..elems.len()-1])
+        // }
     }
 }
 
@@ -76,18 +74,22 @@ mod tests {
             let objects = reader::read($input).unwrap();
             assert_eq!(objects.len(), 1);
             let exp = objects.first().unwrap();
-            assert!(exp.is_pair());
 
             let env = Environment::new();
             let result = eval(exp.clone(), &env);
-            assert_eq!(*result, $expected);
+            assert_eq!(result, $expected);
         }};
     }
 
     #[test]
-    fn test_eval_builtins() {
-        assert_eval!("(+ 1 2 3)", Object::Integer(6));
-        assert_eval!("(+ 1 2 3 4 5 6)", Object::Integer(21));
-        assert_eval!("(* 2 2 2 2)", Object::Integer(16));
+    fn test_self_evaluating() {
+        assert_eval!("1", &Object::Integer(1));
     }
+
+    // #[test]
+    // fn test_eval_builtins() {
+    //     assert_eval!("(+ 1 2 3)", &Object::Integer(6));
+    //     assert_eval!("(+ 1 2 3 4 5 6)", &Object::Integer(21));
+    //     assert_eval!("(* 2 2 2 2)", &Object::Integer(16));
+    // }
 }
