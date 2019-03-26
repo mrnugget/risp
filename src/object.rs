@@ -1,14 +1,40 @@
 use std::fmt;
 
-type BuiltinFunction = fn(Object) -> Object;
+pub type BuiltinFunction = fn(&[Object]) -> Object;
 
-#[derive(Debug, Eq, PartialEq, Hash)]
+pub enum Function {
+    Native(BuiltinFunction),
+}
+
+impl PartialEq for Function {
+    fn eq(&self, other: &Function) -> bool {
+        self == other
+    }
+}
+
+impl fmt::Display for Function {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Function::Native(_) => write!(f, "<native>"),
+        }
+    }
+}
+
+impl Clone for Function {
+    fn clone(&self) -> Function {
+        match *self {
+            Function::Native(ref func) => Function::Native(*func),
+        }
+    }
+}
+
+#[derive(PartialEq)]
 pub enum Object {
     Nil,
     Integer(i64),
     Symbol(String),
-    Builtin(BuiltinFunction),
     List(Vec<Object>),
+    Callable(Function),
 }
 
 impl Object {
@@ -40,7 +66,25 @@ impl fmt::Display for Object {
             Object::Nil => write!(f, "<nil>"),
             Object::Integer(num) => write!(f, "{}", num),
             Object::Symbol(sym) => write!(f, "{}", sym),
-            Object::Builtin(_) => write!(f, "<builtin_function>"),
+            Object::Callable(_) => write!(f, "<callable>"),
+            Object::List(items) => {
+                write!(f, "(")?;
+                for i in items.iter() {
+                    write!(f, "{}", i)?;
+                }
+                write!(f, ")")
+            }
+        }
+    }
+}
+
+impl fmt::Debug for Object {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Object::Nil => write!(f, "<nil>"),
+            Object::Integer(num) => write!(f, "{}", num),
+            Object::Symbol(sym) => write!(f, "{}", sym),
+            Object::Callable(_) => write!(f, "<callable>"),
             Object::List(items) => {
                 write!(f, "(")?;
                 for i in items.iter() {
@@ -79,68 +123,66 @@ impl fmt::Display for Object {
 // }
 
 // TODO: This can merged with `multiply` into a generic `fold_integers`
-pub fn sum(list: &Object) -> Object {
-    match list {
-        Object::List(ref items) => {
-            let mut sum = 0;
-            for i in items.iter() {
-                if let Object::Integer(val) = i {
-                    sum += val;
-                } else {
-                    return Object::Nil;
-                }
-            }
-            Object::Integer(sum)
-        }
-        _ => Object::Nil,
-    }
+pub fn sum(args: &[Object]) -> Object {
+    Object::Nil
+    // match args.first() {
+    //     Object::List(ref items) => {
+    //         let mut sum = 0;
+    //         for i in items.iter() {
+    //             if let Object::Integer(val) = i {
+    //                 sum += val;
+    //             } else {
+    //                 return Object::Nil;
+    //             }
+    //         }
+    //         Object::Integer(sum)
+    //     }
+    //     _ => Object::Nil,
+    // }
 }
 
 // TODO: This can merged with `sum` into a generic `fold_integers`
-pub fn multiply(list: &Object) -> Object {
-    match list {
-        Object::List(ref items) => {
-            let mut sum = 0;
-            for (i, o) in items.iter().enumerate() {
-                if let Object::Integer(val) = o {
-                    if i == 0 {
-                        sum = *val;
-                    } else {
-                        sum *= val;
-                    }
-                } else {
-                    return Object::Nil;
-                }
-            }
-            Object::Integer(sum)
-        }
-        _ => Object::Nil,
-    }
+pub fn multiply(args: &[Object]) -> Object {
+    Object::Nil
+    // match list {
+    //     Object::List(ref items) => {
+    //         let mut sum = 0;
+    //         for (i, o) in items.iter().enumerate() {
+    //             if let Object::Integer(val) = o {
+    //                 if i == 0 {
+    //                     sum = *val;
+    //                 } else {
+    //                     sum *= val;
+    //                 }
+    //             } else {
+    //                 return Object::Nil;
+    //             }
+    //         }
+    //         Object::Integer(sum)
+    //     }
+    //     _ => Object::Nil,
+    // }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn new_test_list() -> Object {
-        Object::List(vec![
-            Object::Integer(1),
-            Object::Integer(2),
-            Object::Integer(3),
-        ])
+    fn new_test_args() -> Vec<Object> {
+        vec![Object::Integer(1), Object::Integer(2), Object::Integer(3)]
     }
 
     #[test]
     fn test_list_sum() {
-        let list = new_test_list();
-        let sum_result = sum(&list);
+        let args = new_test_args();
+        let sum_result = sum(&args);
         assert_eq!(sum_result, Object::Integer(6));
     }
 
     #[test]
     fn test_list_multiply() {
-        let list = new_test_list();
-        let multiply_result = multiply(&list);
+        let args = new_test_args();
+        let multiply_result = multiply(&args);
         assert_eq!(multiply_result, Object::Integer(6));
     }
 

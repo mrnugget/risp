@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
+use crate::object;
 use crate::object::Object;
+use crate::object::Function;
 
 pub struct Environment {
     entries: HashMap<String, Object>,
@@ -8,19 +10,12 @@ pub struct Environment {
 
 impl Environment {
     fn new() -> Environment {
-        let env = Environment {
+        let mut env = Environment {
             entries: HashMap::new(),
         };
 
-        // let predefined_functions = &[
-        //     ("+", Object::Builtin(object::sum)),
-        //     ("*", Object::Builtin(object::multiply)),
-        // ];
-
-        // for item in predefined_functions.iter() {
-        //     let (name, func) = item;
-        //     env.define(name.to_string(), func).unwrap();
-        // }
+        env.define(String::from("+"), Object::Callable(Function::Native(object::sum)));
+        env.define(String::from("*"), Object::Callable(Function::Native(object::multiply)));
 
         env
     }
@@ -53,7 +48,8 @@ impl Environment {
 
 pub fn eval<'a>(exp: &'a Object, env: &'a Environment) -> &'a Object {
     match exp {
-        Object::Nil | Object::Integer(_) | Object::Builtin(_) => exp,
+        Object::Nil | Object::Integer(_) | Object::Callable(_) => exp,
+
         Object::Symbol(name) => env.get(name),
         Object::List(ref elems) => &elems[0],
         // Object::List(ref elems) => {
@@ -83,13 +79,13 @@ mod tests {
 
     #[test]
     fn test_self_evaluating() {
-        assert_eval!("1", &Object::Integer(1));
+        assert_eval!("15", &Object::Integer(15));
     }
 
-    // #[test]
-    // fn test_eval_builtins() {
-    //     assert_eval!("(+ 1 2 3)", &Object::Integer(6));
-    //     assert_eval!("(+ 1 2 3 4 5 6)", &Object::Integer(21));
-    //     assert_eval!("(* 2 2 2 2)", &Object::Integer(16));
-    // }
+    #[test]
+    fn test_eval_builtins() {
+        assert_eval!("(+ 1 2 3)", &Object::Integer(6));
+        assert_eval!("(+ 1 2 3 4 5 6)", &Object::Integer(21));
+        assert_eval!("(* 2 2 2 2)", &Object::Integer(16));
+    }
 }
