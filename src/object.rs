@@ -124,44 +124,32 @@ impl fmt::Debug for Object {
 
 // TODO: This can merged with `multiply` into a generic `fold_integers`
 pub fn sum(args: &[Object]) -> Object {
-    Object::Nil
-    // match args.first() {
-    //     Object::List(ref items) => {
-    //         let mut sum = 0;
-    //         for i in items.iter() {
-    //             if let Object::Integer(val) = i {
-    //                 sum += val;
-    //             } else {
-    //                 return Object::Nil;
-    //             }
-    //         }
-    //         Object::Integer(sum)
-    //     }
-    //     _ => Object::Nil,
-    // }
+    let mut sum = 0;
+    for i in args.iter() {
+        if let Object::Integer(val) = i {
+            sum += val;
+        } else {
+            return Object::Nil;
+        }
+    }
+    Object::Integer(sum)
 }
 
 // TODO: This can merged with `sum` into a generic `fold_integers`
 pub fn multiply(args: &[Object]) -> Object {
-    Object::Nil
-    // match list {
-    //     Object::List(ref items) => {
-    //         let mut sum = 0;
-    //         for (i, o) in items.iter().enumerate() {
-    //             if let Object::Integer(val) = o {
-    //                 if i == 0 {
-    //                     sum = *val;
-    //                 } else {
-    //                     sum *= val;
-    //                 }
-    //             } else {
-    //                 return Object::Nil;
-    //             }
-    //         }
-    //         Object::Integer(sum)
-    //     }
-    //     _ => Object::Nil,
-    // }
+    let mut sum = 0;
+    for (i, o) in args.iter().enumerate() {
+        if let Object::Integer(val) = o {
+            if i == 0 {
+                sum = *val;
+            } else {
+                sum *= val;
+            }
+        } else {
+            return Object::Nil;
+        }
+    }
+    Object::Integer(sum)
 }
 
 #[cfg(test)]
