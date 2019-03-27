@@ -14,14 +14,15 @@ impl Environment {
             entries: HashMap::new(),
         };
 
-        env.define(
-            String::from("+"),
-            Object::Callable(Function::Native(object::sum)),
-        );
-        env.define(
-            String::from("*"),
-            Object::Callable(Function::Native(object::multiply)),
-        );
+        let native_functions = &[
+            ("+", Function::Native(object::sum)),
+            ("*", Function::Native(object::multiply)),
+        ];
+
+        for item in native_functions.into_iter() {
+            let (name, ref func) = item;
+            env.define(name.to_string(), Object::Callable(func.clone())).unwrap();
+        }
 
         env
     }
@@ -62,9 +63,8 @@ pub fn eval<'a>(exp: Object, env: &'a Environment) -> Object {
         Object::Symbol(name) => env.get(&name),
         Object::List(elems) => {
             let mut iter = elems.into_iter();
-            let first = iter.next().unwrap();
+            let proc = eval(iter.next().unwrap(), env);
             let args = iter.collect::<Vec<Object>>();
-            let proc = eval(first, env);
             apply(&proc, &args)
         }
     }

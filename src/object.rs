@@ -113,14 +113,10 @@ pub fn sum(args: &[Object]) -> Object {
 
 // TODO: This can merged with `sum` into a generic `fold_integers`
 pub fn multiply(args: &[Object]) -> Object {
-    let mut sum = 0;
-    for (i, o) in args.iter().enumerate() {
+    let mut sum = 1;
+    for o in args.iter() {
         if let Object::Integer(val) = o {
-            if i == 0 {
-                sum = *val;
-            } else {
-                sum *= val;
-            }
+            sum *= val;
         } else {
             return Object::Nil;
         }
