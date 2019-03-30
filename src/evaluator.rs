@@ -21,7 +21,8 @@ impl Environment {
 
         for item in native_functions.into_iter() {
             let (name, ref func) = item;
-            env.define(name.to_string(), Object::Callable(func.clone())).unwrap();
+            env.define(name.to_string(), Object::Callable(func.clone()))
+                .unwrap();
         }
 
         env
@@ -47,7 +48,6 @@ impl Environment {
 
 pub fn apply(proc: &Object, args: &[Object]) -> Object {
     if let Object::Callable(func) = proc {
-        println!("here we are!");
         let Function::Native(builtin) = func;
         return builtin(args);
     }

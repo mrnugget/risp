@@ -101,10 +101,8 @@ pub fn sum(args: &[Object]) -> Object {
     let mut sum = 0;
     for i in args.iter() {
         if let Object::Integer(val) = i {
-            println!("val={}", val);
             sum += val;
         } else {
-            println!("nil?");
             return Object::Nil;
         }
     }
