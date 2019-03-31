@@ -38,6 +38,12 @@ pub enum Object {
     Error(String),
 }
 
+macro_rules! err {
+    ( $message:expr ) => {{
+        Object::Error(String::from(format!($message)))
+    }};
+}
+
 impl fmt::Display for Object {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -63,11 +69,11 @@ impl fmt::Display for Object {
 impl fmt::Debug for Object {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Object::Nil => write!(f, "<nil>"),
-            Object::Integer(num) => write!(f, "{}", num),
-            Object::Symbol(sym) => write!(f, "{}", sym),
-            Object::Error(sym) => write!(f, "Error({})", sym),
-            Object::Callable(_) => write!(f, "<callable>"),
+            Object::Nil => write!(f, "Object::Nil"),
+            Object::Integer(num) => write!(f, "Object::Integer({})", num),
+            Object::Symbol(sym) => write!(f, "Object::Symbol({})", sym),
+            Object::Error(sym) => write!(f, "Object::Error({})", sym),
+            Object::Callable(_) => write!(f, "Object::Callable(<callable>)"),
             Object::List(items) => {
                 write!(f, "(")?;
                 for (i, item) in items.iter().enumerate() {
@@ -96,13 +102,13 @@ pub fn plus(args: &[Object]) -> Object {
 
 pub fn minus(args: &[Object]) -> Object {
     if args.len() < 2 {
-        return Object::Error(String::from("not enough arguments"));
+        return err!("not enough arguments");
     }
 
     let mut iter = args.iter();
     let mut sum = match iter.next().unwrap() {
         Object::Integer(first) => *first,
-        _ => return Object::Error(String::from("argument has wrong type")),
+        _ => return err!("argument has wrong type"),
     };
 
     for i in iter {
