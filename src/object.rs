@@ -38,29 +38,6 @@ pub enum Object {
     Error(String),
 }
 
-impl Object {
-    pub fn is_nil(&self) -> bool {
-        match self {
-            Object::Nil => true,
-            _ => false,
-        }
-    }
-
-    pub fn is_integer(&self) -> bool {
-        match self {
-            Object::Integer(_) => true,
-            _ => false,
-        }
-    }
-
-    pub fn is_list(&self) -> bool {
-        match self {
-            Object::List(_) => true,
-            _ => false,
-        }
-    }
-}
-
 impl fmt::Display for Object {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {

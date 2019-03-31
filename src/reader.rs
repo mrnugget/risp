@@ -107,7 +107,6 @@ mod tests {
         let objects = read("5").unwrap();
 
         let number = objects.first().unwrap();
-        assert!(number.is_integer());
 
         match number.deref() {
             Object::Integer(int) => assert_eq!(*int, 5),
@@ -117,7 +116,6 @@ mod tests {
         let objects = read("123456789").unwrap();
 
         let number = objects.first().unwrap();
-        assert!(number.is_integer());
 
         match number.deref() {
             Object::Integer(int) => assert_eq!(*int, 123456789),
@@ -131,7 +129,6 @@ mod tests {
         assert_eq!(objects.len(), 4);
 
         let number = objects.first().unwrap();
-        assert!(number.is_integer());
 
         match number.deref() {
             Object::Integer(int) => assert_eq!(*int, 5),
@@ -165,10 +162,7 @@ mod tests {
                 Object::List(vec![
                     Object::Integer(2),
                     Object::Integer(3),
-                    Object::List(vec![
-                        Object::Integer(4),
-                        Object::Integer(5)
-                    ]),
+                    Object::List(vec![Object::Integer(4), Object::Integer(5)]),
                 ]),
             ])
         );
