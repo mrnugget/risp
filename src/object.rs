@@ -94,6 +94,28 @@ pub fn plus(args: &[Object]) -> Object {
     Object::Integer(sum)
 }
 
+pub fn minus(args: &[Object]) -> Object {
+    if args.len() < 2 {
+        return Object::Error(String::from("not enough arguments"));
+    }
+
+    let mut iter = args.iter();
+    let mut sum = match iter.next().unwrap() {
+        Object::Integer(first) => *first,
+        _ => return Object::Error(String::from("argument has wrong type")),
+    };
+
+    for i in iter {
+        if let Object::Integer(val) = i {
+            sum -= val;
+        } else {
+            return Object::Nil;
+        }
+    }
+
+    Object::Integer(sum)
+}
+
 pub fn multiply(args: &[Object]) -> Object {
     let mut sum = 1;
     for o in args.iter() {
@@ -115,15 +137,34 @@ pub fn list(args: &[Object]) -> Object {
 mod tests {
     use super::*;
 
+    macro_rules! integer_vec {
+        ( $( $x:expr ),* ) => {
+            {
+                let mut temp_vec = Vec::new();
+                $(
+                    temp_vec.push(Object::Integer($x));
+                )*
+                    temp_vec
+            }
+        };
+    }
+
     fn new_test_args() -> Vec<Object> {
         vec![Object::Integer(1), Object::Integer(2), Object::Integer(3)]
     }
 
     #[test]
     fn test_list_plus() {
-        let args = new_test_args();
+        let args = integer_vec![1, 2, 3];
         let sum = plus(&args);
         assert_eq!(sum, Object::Integer(6));
+    }
+
+    #[test]
+    fn test_list_minus() {
+        let args = integer_vec![8, 4, 2];
+        let result = minus(&args);
+        assert_eq!(result, Object::Integer(2));
     }
 
     #[test]
