@@ -66,11 +66,15 @@ impl fmt::Display for Object {
             Object::Nil => write!(f, "<nil>"),
             Object::Integer(num) => write!(f, "{}", num),
             Object::Symbol(sym) => write!(f, "{}", sym),
+            Object::Error(sym) => write!(f, "Error({})", sym),
             Object::Callable(_) => write!(f, "<callable>"),
             Object::List(items) => {
                 write!(f, "(")?;
-                for i in items.iter() {
-                    write!(f, "{}", i)?;
+                for (i, item) in items.iter().enumerate() {
+                    write!(f, "{}", item)?;
+                    if i != items.len() - 1 {
+                        write!(f, " ")?;
+                    }
                 }
                 write!(f, ")")
             }
@@ -84,11 +88,15 @@ impl fmt::Debug for Object {
             Object::Nil => write!(f, "<nil>"),
             Object::Integer(num) => write!(f, "{}", num),
             Object::Symbol(sym) => write!(f, "{}", sym),
+            Object::Error(sym) => write!(f, "Error({})", sym),
             Object::Callable(_) => write!(f, "<callable>"),
             Object::List(items) => {
                 write!(f, "(")?;
-                for i in items.iter() {
-                    write!(f, "{}", i)?;
+                for (i, item) in items.iter().enumerate() {
+                    write!(f, "{}", item)?;
+                    if i != items.len() - 1 {
+                        write!(f, " ")?;
+                    }
                 }
                 write!(f, ")")
             }
@@ -118,6 +126,11 @@ pub fn multiply(args: &[Object]) -> Object {
         }
     }
     Object::Integer(sum)
+}
+
+pub fn list(args: &[Object]) -> Object {
+    let items = args.to_vec();
+    Object::List(items)
 }
 
 #[cfg(test)]

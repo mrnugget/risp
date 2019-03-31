@@ -17,6 +17,7 @@ impl Environment {
         let native_functions = &[
             ("+", Function::Native(object::sum)),
             ("*", Function::Native(object::multiply)),
+            ("list", Function::Native(object::list)),
         ];
 
         for item in native_functions.into_iter() {
@@ -98,5 +99,14 @@ mod tests {
         assert_eval!("(+ 1 2 3)", Object::Integer(6));
         assert_eval!("(+ 1 2 3 4 5 6)", Object::Integer(21));
         assert_eval!("(* 2 2 2 2)", Object::Integer(16));
+        assert_eval!(
+            "(list 1 2 3)",
+            Object::List(vec![
+                Object::Integer(1),
+                Object::Integer(2),
+                Object::Integer(3)
+            ])
+        );
+    }
     }
 }
