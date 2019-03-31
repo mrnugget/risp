@@ -15,7 +15,7 @@ impl Environment {
         };
 
         let native_functions = &[
-            ("+", Function::Native(object::sum)),
+            ("+", Function::Native(object::plus)),
             ("*", Function::Native(object::multiply)),
             ("list", Function::Native(object::list)),
         ];

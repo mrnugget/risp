@@ -82,7 +82,7 @@ impl fmt::Debug for Object {
     }
 }
 
-pub fn sum(args: &[Object]) -> Object {
+pub fn plus(args: &[Object]) -> Object {
     let mut sum = 0;
     for i in args.iter() {
         if let Object::Integer(val) = i {
@@ -122,8 +122,8 @@ mod tests {
     #[test]
     fn test_list_plus() {
         let args = new_test_args();
-        let sum_result = sum(&args);
-        assert_eq!(sum_result, Object::Integer(6));
+        let sum = plus(&args);
+        assert_eq!(sum, Object::Integer(6));
     }
 
     #[test]
