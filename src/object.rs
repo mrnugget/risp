@@ -35,6 +35,7 @@ pub enum Object {
     Symbol(String),
     List(Vec<Object>),
     Callable(Function),
+    Error(String),
 }
 
 impl Object {

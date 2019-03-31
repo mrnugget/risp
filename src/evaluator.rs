@@ -30,13 +30,8 @@ impl Environment {
     }
 
     fn define(&mut self, key: String, obj: Object) -> Result<(), ()> {
-        if self.entries.contains_key(&key) {
-            // TODO: we need a real error here
-            return Err(());
-        } else {
-            self.entries.insert(key, obj);
-            Ok(())
-        }
+        self.entries.insert(key, obj);
+        Ok(())
     }
 
     fn get(&self, key: &String) -> Object {
@@ -53,13 +48,12 @@ pub fn apply(proc: &Object, args: &[Object]) -> Object {
         return builtin(args);
     }
 
-    // TODO: this should be an error
-    Object::Nil
+    Object::Error(String::from("cannot call non-function"))
 }
 
 pub fn eval<'a>(exp: Object, env: &'a Environment) -> Object {
     match exp {
-        Object::Nil | Object::Integer(_) | Object::Callable(_) => exp,
+        Object::Nil | Object::Integer(_) | Object::Callable(_) | Object::Error(_) => exp,
 
         Object::Symbol(name) => env.get(&name),
         Object::List(elems) => {
@@ -108,5 +102,12 @@ mod tests {
             ])
         );
     }
+
+    #[test]
+    fn test_eval_applying_non_callable() {
+        assert_eval!(
+            "(1)",
+            Object::Error(String::from("cannot call non-function"))
+        );
     }
 }
