@@ -120,7 +120,7 @@ mod tests {
     }
 
     #[test]
-    fn test_list_sum() {
+    fn test_list_plus() {
         let args = new_test_args();
         let sum_result = sum(&args);
         assert_eq!(sum_result, Object::Integer(6));
