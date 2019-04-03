@@ -17,8 +17,6 @@ fn read_integer<T: Iterator<Item = char>>(lexer: &mut Peekable<T>) -> Result<Obj
         lexer.next();
     }
 
-    lexer.next();
-
     Ok(Object::Integer(number))
 }
 
@@ -71,6 +69,7 @@ fn read_list<T: Iterator<Item = char>>(lexer: &mut Peekable<T>) -> Result<Object
 
     Ok(Object::List(elems))
 }
+
 fn read_object<T: Iterator<Item = char>>(lexer: &mut Peekable<T>) -> Result<Object, String> {
     match lexer.peek() {
         Some('0'...'9') => read_integer(lexer),
@@ -209,4 +208,22 @@ mod tests {
             ])
         );
     }
+
+    #[test]
+    fn reading_multiple_lists() {
+        let input = "(1)
+(foobar)
+(7)";
+
+        let objects = read(input).unwrap();
+        assert_eq!(objects.len(), 3);
+
+        assert_eq!(objects[0], Object::List(vec![Object::Integer(1)]));
+        assert_eq!(
+            objects[1],
+            Object::List(vec![Object::Symbol(String::from("foobar"))])
+        );
+        assert_eq!(objects[2], Object::List(vec![Object::Integer(7)]));
+    }
+
 }
