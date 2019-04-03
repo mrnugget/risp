@@ -1,6 +1,50 @@
+use std::cell::RefCell;
+use std::collections::HashMap;
 use std::fmt;
+use std::rc::Rc;
 
-pub type BuiltinFunction = fn(&[Object]) -> Object;
+use crate::evaluator::eval;
+
+pub struct Environment {
+    entries: HashMap<String, Object>,
+}
+
+impl Environment {
+    pub fn new() -> Rc<RefCell<Environment>> {
+        let mut env = Environment {
+            entries: HashMap::new(),
+        };
+
+        let native_functions = &[
+            ("+", Function::Native(plus)),
+            ("*", Function::Native(multiply)),
+            ("list", Function::Native(list)),
+            ("define", Function::Native(define)),
+        ];
+
+        for item in native_functions.into_iter() {
+            let (name, ref func) = item;
+            env.define(name.to_string(), Object::Callable(func.clone()))
+                .unwrap();
+        }
+
+        Rc::new(RefCell::new(env))
+    }
+
+    pub fn define(&mut self, key: String, obj: Object) -> Result<(), ()> {
+        self.entries.insert(key, obj);
+        Ok(())
+    }
+
+    pub fn get(&self, key: &String) -> Object {
+        match self.entries.get(key) {
+            Some(val) => val.clone(),
+            None => Object::Nil,
+        }
+    }
+}
+
+pub type BuiltinFunction = fn(&[Object], Rc<RefCell<Environment>>) -> Object;
 
 pub enum Function {
     Native(BuiltinFunction),
@@ -88,7 +132,20 @@ impl fmt::Debug for Object {
     }
 }
 
-pub fn plus(args: &[Object]) -> Object {
+pub fn define(args: &[Object], env: Rc<RefCell<Environment>>) -> Object {
+    let name = match &args[0] {
+        Object::Symbol(name) => name.to_string(),
+        _ => return err!("argument has wrong type"),
+    };
+
+    let value = eval(args[1].clone(), env.clone());
+
+    env.borrow_mut().define(name.to_string(), value).unwrap();
+
+    Object::Nil
+}
+
+pub fn plus(args: &[Object], _env: Rc<RefCell<Environment>>) -> Object {
     let mut sum = 0;
     for i in args.iter() {
         if let Object::Integer(val) = i {
@@ -100,7 +157,7 @@ pub fn plus(args: &[Object]) -> Object {
     Object::Integer(sum)
 }
 
-pub fn minus(args: &[Object]) -> Object {
+pub fn minus(args: &[Object], _env: Rc<RefCell<Environment>>) -> Object {
     if args.len() < 2 {
         return err!("not enough arguments");
     }
@@ -122,7 +179,7 @@ pub fn minus(args: &[Object]) -> Object {
     Object::Integer(sum)
 }
 
-pub fn multiply(args: &[Object]) -> Object {
+pub fn multiply(args: &[Object], _env: Rc<RefCell<Environment>>) -> Object {
     let mut sum = 1;
     for o in args.iter() {
         if let Object::Integer(val) = o {
@@ -134,7 +191,7 @@ pub fn multiply(args: &[Object]) -> Object {
     Object::Integer(sum)
 }
 
-pub fn list(args: &[Object]) -> Object {
+pub fn list(args: &[Object], _env: Rc<RefCell<Environment>>) -> Object {
     let items = args.to_vec();
     Object::List(items)
 }
@@ -162,21 +219,21 @@ mod tests {
     #[test]
     fn test_list_plus() {
         let args = integer_vec![1, 2, 3];
-        let sum = plus(&args);
+        let sum = plus(&args, Environment::new());
         assert_eq!(sum, Object::Integer(6));
     }
 
     #[test]
     fn test_list_minus() {
         let args = integer_vec![8, 4, 2];
-        let result = minus(&args);
+        let result = minus(&args, Environment::new());
         assert_eq!(result, Object::Integer(2));
     }
 
     #[test]
     fn test_list_multiply() {
         let args = new_test_args();
-        let multiply_result = multiply(&args);
+        let multiply_result = multiply(&args, Environment::new());
         assert_eq!(multiply_result, Object::Integer(6));
     }
 }

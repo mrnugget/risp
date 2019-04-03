@@ -1,66 +1,32 @@
-use std::collections::HashMap;
+use std::cell::RefCell;
+use std::rc::Rc;
 
-use crate::object;
+use crate::object::Environment;
 use crate::object::Function;
 use crate::object::Object;
 
-pub struct Environment {
-    entries: HashMap<String, Object>,
-}
-
-impl Environment {
-    fn new() -> Environment {
-        let mut env = Environment {
-            entries: HashMap::new(),
-        };
-
-        let native_functions = &[
-            ("+", Function::Native(object::plus)),
-            ("*", Function::Native(object::multiply)),
-            ("list", Function::Native(object::list)),
-        ];
-
-        for item in native_functions.into_iter() {
-            let (name, ref func) = item;
-            env.define(name.to_string(), Object::Callable(func.clone()))
-                .unwrap();
-        }
-
-        env
-    }
-
-    fn define(&mut self, key: String, obj: Object) -> Result<(), ()> {
-        self.entries.insert(key, obj);
-        Ok(())
-    }
-
-    fn get(&self, key: &String) -> Object {
-        match self.entries.get(key) {
-            Some(val) => val.clone(),
-            None => Object::Nil,
-        }
-    }
-}
-
-pub fn apply(proc: &Object, args: &[Object]) -> Object {
+pub fn apply(proc: &Object, args: &[Object], env: Rc<RefCell<Environment>>) -> Object {
     if let Object::Callable(func) = proc {
         let Function::Native(builtin) = func;
-        return builtin(args);
+        return builtin(args, env);
     }
 
     Object::Error(String::from("cannot call non-function"))
 }
 
-pub fn eval<'a>(exp: Object, env: &'a Environment) -> Object {
+pub fn eval(exp: Object, env: Rc<RefCell<Environment>>) -> Object {
     match exp {
         Object::Nil | Object::Integer(_) | Object::Callable(_) | Object::Error(_) => exp,
 
-        Object::Symbol(name) => env.get(&name),
+        Object::Symbol(name) => {
+            let val = env.borrow().get(&name);
+            val
+        }
         Object::List(elems) => {
             let mut iter = elems.into_iter();
-            let proc = eval(iter.next().unwrap(), env);
+            let proc = eval(iter.next().unwrap(), env.clone());
             let args = iter.collect::<Vec<Object>>();
-            apply(&proc, &args)
+            apply(&proc, &args, env.clone())
         }
     }
 }
@@ -73,12 +39,15 @@ mod tests {
 
     macro_rules! assert_eval {
         ( $input:expr, $expected:expr ) => {{
-            let objects = reader::read($input).unwrap();
-            assert_eq!(objects.len(), 1);
-            let exp = objects.into_iter().next().unwrap();
-
             let env = Environment::new();
-            let result = eval(exp, &env);
+
+            let objects = reader::read($input).unwrap();
+
+            let mut result = Object::Nil;
+            for exp in objects.into_iter() {
+                result = eval(exp, env.clone())
+            }
+
             assert_eq!(result, $expected);
         }};
     }
@@ -112,6 +81,21 @@ mod tests {
         assert_eval!(
             "(1)",
             Object::Error(String::from("cannot call non-function"))
+        );
+    }
+
+    #[test]
+    fn test_definitions() {
+        assert_eval!(
+            "(define foobar 15)
+foobar",
+            Object::Integer(15)
+        );
+
+        assert_eval!(
+            "(define foobar (+ 1 2 3 4))
+        foobar",
+            Object::Integer(10)
         );
     }
 }
