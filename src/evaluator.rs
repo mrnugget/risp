@@ -77,6 +77,14 @@ mod tests {
     }
 
     #[test]
+    fn test_eval_builtin_cons() {
+        assert_eval!(
+            "(cons 1 2)",
+            Object::List(vec![Object::Integer(1), Object::Integer(2)])
+        );
+    }
+
+    #[test]
     fn test_eval_applying_non_callable() {
         assert_eval!(
             "(1)",

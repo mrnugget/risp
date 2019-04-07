@@ -19,6 +19,7 @@ impl Environment {
             ("+", Function::Native(plus)),
             ("*", Function::Native(multiply)),
             ("list", Function::Native(list)),
+            ("cons", Function::Native(cons)),
             ("define", Function::Native(define)),
         ];
 
@@ -196,6 +197,15 @@ pub fn list(args: &[Object], _env: Rc<RefCell<Environment>>) -> Object {
     Object::List(items)
 }
 
+pub fn cons(args: &[Object], _env: Rc<RefCell<Environment>>) -> Object {
+    if args.len() != 2 {
+        return err!("wrong number of arguments");
+    }
+
+    let items = args.to_vec();
+    Object::List(items)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -204,16 +214,10 @@ mod tests {
         ( $( $x:expr ),* ) => {
             {
                 let mut temp_vec = Vec::new();
-                $(
-                    temp_vec.push(Object::Integer($x));
-                )*
-                    temp_vec
+                $(temp_vec.push(Object::Integer($x));)*
+                temp_vec
             }
         };
-    }
-
-    fn new_test_args() -> Vec<Object> {
-        vec![Object::Integer(1), Object::Integer(2), Object::Integer(3)]
     }
 
     #[test]
@@ -232,8 +236,22 @@ mod tests {
 
     #[test]
     fn test_list_multiply() {
-        let args = new_test_args();
+        let args = integer_vec![1, 2, 3];
         let multiply_result = multiply(&args, Environment::new());
         assert_eq!(multiply_result, Object::Integer(6));
+    }
+
+    #[test]
+    fn test_cons() {
+        let args = integer_vec![1, 2];
+        let cons_result = cons(&args, Environment::new());
+        assert_eq!(cons_result, Object::List(integer_vec![1, 2]));
+
+        let args = integer_vec![1, 2, 3, 4];
+        let cons_result = cons(&args, Environment::new());
+        assert_eq!(
+            cons_result,
+            Object::Error(String::from("wrong number of arguments"))
+        );
     }
 }
