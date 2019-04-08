@@ -7,8 +7,24 @@ use crate::object::Object;
 
 pub fn apply(proc: &Object, args: &[Object], env: Rc<RefCell<Environment>>) -> Object {
     if let Object::Callable(func) = proc {
-        let Function::Native(builtin) = func;
-        return builtin(args, env);
+        return match func {
+            Function::Native(builtin) => builtin(args, env),
+            Function::Lambda(parameters, body, lambda_env) => {
+                let application_env = Environment::new_child(lambda_env.clone());
+                for (i, p) in parameters.iter().enumerate() {
+                    if let Object::Symbol(name) = p {
+                        application_env
+                            .borrow_mut()
+                            .define(name.to_string(), args[i].clone());
+                    }
+                }
+
+                body.iter()
+                    .map(|e| eval(e.clone(), application_env.clone()))
+                    .last()
+                    .unwrap()
+            }
+        };
     }
 
     Object::Error(String::from("cannot call non-function"))
@@ -23,6 +39,10 @@ pub fn eval(exp: Object, env: Rc<RefCell<Environment>>) -> Object {
                 return make_definition(&elems, env.clone());
             }
 
+            if is_lambda(&elems) {
+                return make_lambda(&elems, env.clone());
+            }
+
             let mut iter = elems.into_iter();
             let proc = eval(iter.next().unwrap(), env.clone());
             let args = iter
@@ -31,6 +51,24 @@ pub fn eval(exp: Object, env: Rc<RefCell<Environment>>) -> Object {
             apply(&proc, &args, env.clone())
         }
     }
+}
+
+fn is_lambda(exps: &[Object]) -> bool {
+    match exps.first() {
+        Some(&Object::Symbol(ref name)) => name == "lambda",
+        _ => false,
+    }
+}
+
+fn make_lambda(exps: &[Object], env: Rc<RefCell<Environment>>) -> Object {
+    let args = match &exps[1] {
+        Object::List(args) => args.clone(),
+        _ => return Object::Error(String::from("arguments are not a list")),
+    };
+
+    let body = vec![exps[2].clone()];
+
+    Object::Callable(Function::Lambda(args, body, env.clone()))
 }
 
 fn is_definition(exps: &[Object]) -> bool {
@@ -132,5 +170,11 @@ mod tests {
             foobar",
             Object::Integer(10)
         );
+    }
+
+    #[test]
+    fn test_lambdas() {
+        assert_eval!("((lambda (x) (+ x 1)) 2)", Object::Integer(3));
+        assert_eval!("((lambda (a b c) (+ a b c)) 1 2 3)", Object::Integer(6));
     }
 }

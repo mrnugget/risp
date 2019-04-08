@@ -4,12 +4,14 @@ use std::fmt;
 use std::rc::Rc;
 
 pub struct Environment {
+    parent: Option<Rc<RefCell<Environment>>>,
     entries: HashMap<String, Object>,
 }
 
 impl Environment {
     pub fn new() -> Rc<RefCell<Environment>> {
         let mut env = Environment {
+            parent: None,
             entries: HashMap::new(),
         };
 
@@ -30,6 +32,15 @@ impl Environment {
         Rc::new(RefCell::new(env))
     }
 
+    pub fn new_child(parent: Rc<RefCell<Environment>>) -> Rc<RefCell<Environment>> {
+        let env = Environment {
+            parent: Some(parent),
+            entries: HashMap::new(),
+        };
+
+        Rc::new(RefCell::new(env))
+    }
+
     pub fn define(&mut self, key: String, obj: Object) -> Result<(), ()> {
         self.entries.insert(key, obj);
         Ok(())
@@ -38,7 +49,10 @@ impl Environment {
     pub fn get(&self, key: &String) -> Object {
         match self.entries.get(key) {
             Some(val) => val.clone(),
-            None => Object::Nil,
+            None => match self.parent {
+                Some(ref parent) => parent.borrow().get(key),
+                None => Object::Nil,
+            },
         }
     }
 }
@@ -47,6 +61,7 @@ pub type BuiltinFunction = fn(&[Object], Rc<RefCell<Environment>>) -> Object;
 
 pub enum Function {
     Native(BuiltinFunction),
+    Lambda(Vec<Object>, Vec<Object>, Rc<RefCell<Environment>>),
 }
 
 impl PartialEq for Function {
@@ -59,6 +74,7 @@ impl fmt::Display for Function {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Function::Native(_) => write!(f, "<native>"),
+            Function::Lambda(_, _, _) => write!(f, "<lambda>"),
         }
     }
 }
@@ -67,6 +83,9 @@ impl Clone for Function {
     fn clone(&self) -> Function {
         match *self {
             Function::Native(ref func) => Function::Native(*func),
+            Function::Lambda(ref parameters, ref body, ref env) => {
+                Function::Lambda(parameters.clone(), body.clone(), env.clone())
+            }
         }
     }
 }
@@ -273,5 +292,38 @@ mod tests {
             car_result,
             Object::Error(String::from("argument has wrong type"))
         );
+    }
+
+    #[test]
+    fn test_environment_get() {
+        let env = Environment::new();
+
+        let name = "six".to_string();
+        env.borrow_mut().define(name.clone(), Object::Integer(6));
+        assert_eq!(env.borrow_mut().get(&name), Object::Integer(6));
+
+        let name = "doesnotexist".to_string();
+        assert_eq!(env.borrow_mut().get(&name), Object::Nil);
+    }
+
+    #[test]
+    fn test_environment_get_with_parent() {
+        let parent = Environment::new();
+
+        let only_in_parent = "inparent".to_string();
+        parent
+            .borrow_mut()
+            .define(only_in_parent.clone(), Object::Integer(6));
+        assert_eq!(parent.borrow_mut().get(&only_in_parent), Object::Integer(6));
+
+        let child = Environment::new_child(parent.clone());
+        assert_eq!(child.borrow_mut().get(&only_in_parent), Object::Integer(6));
+
+        let only_in_child = "inchild".to_string();
+        child
+            .borrow_mut()
+            .define(only_in_child.clone(), Object::Integer(99));
+        assert_eq!(child.borrow_mut().get(&only_in_child), Object::Integer(99));
+        assert_eq!(parent.borrow_mut().get(&only_in_child), Object::Nil);
     }
 }
