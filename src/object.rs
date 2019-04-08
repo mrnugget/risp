@@ -3,8 +3,6 @@ use std::collections::HashMap;
 use std::fmt;
 use std::rc::Rc;
 
-use crate::evaluator::eval;
-
 pub struct Environment {
     entries: HashMap<String, Object>,
 }
@@ -21,7 +19,6 @@ impl Environment {
             ("list", Function::Native(list)),
             ("cons", Function::Native(cons)),
             ("car", Function::Native(car)),
-            ("define", Function::Native(define)),
         ];
 
         for item in native_functions.into_iter() {
@@ -132,19 +129,6 @@ impl fmt::Debug for Object {
             }
         }
     }
-}
-
-pub fn define(args: &[Object], env: Rc<RefCell<Environment>>) -> Object {
-    let name = match &args[0] {
-        Object::Symbol(name) => name.to_string(),
-        _ => return err!("argument has wrong type"),
-    };
-
-    let value = eval(args[1].clone(), env.clone());
-
-    env.borrow_mut().define(name.to_string(), value).unwrap();
-
-    Object::Nil
 }
 
 pub fn plus(args: &[Object], _env: Rc<RefCell<Environment>>) -> Object {

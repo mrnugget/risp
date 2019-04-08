@@ -24,11 +24,7 @@ pub fn eval(exp: Object, env: Rc<RefCell<Environment>>) -> Object {
         }
         Object::List(elems) => {
             if is_definition(&elems) {
-                // TODO: Get rid of the `define` function and then of this
-                let mut iter = elems.into_iter();
-                let proc = eval(iter.next().unwrap(), env.clone());
-                let args = iter.collect::<Vec<Object>>();
-                return apply(&proc, &args, env.clone());
+                return make_definition(&elems, env.clone());
             }
 
             let mut iter = elems.into_iter();
@@ -46,6 +42,19 @@ fn is_definition(exps: &[Object]) -> bool {
         Some(&Object::Symbol(ref name)) => name == "define",
         _ => false,
     }
+}
+
+fn make_definition(exps: &[Object], env: Rc<RefCell<Environment>>) -> Object {
+    let name = match &exps[1] {
+        Object::Symbol(name) => name.to_string(),
+        _ => return Object::Error(String::from("argument has wrong type")),
+    };
+
+    let value = eval(exps[2].clone(), env.clone());
+
+    env.borrow_mut().define(name.to_string(), value).unwrap();
+
+    Object::Nil
 }
 
 #[cfg(test)]
