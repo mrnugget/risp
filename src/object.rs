@@ -299,7 +299,8 @@ mod tests {
         let env = Environment::new();
 
         let name = "six".to_string();
-        env.borrow_mut().define(name.clone(), Object::Integer(6));
+        let result = env.borrow_mut().define(name.clone(), Object::Integer(6));
+        assert!(result.is_ok());
         assert_eq!(env.borrow_mut().get(&name), Object::Integer(6));
 
         let name = "doesnotexist".to_string();
@@ -311,18 +312,20 @@ mod tests {
         let parent = Environment::new();
 
         let only_in_parent = "inparent".to_string();
-        parent
+        let result = parent
             .borrow_mut()
             .define(only_in_parent.clone(), Object::Integer(6));
+        assert!(result.is_ok());
         assert_eq!(parent.borrow_mut().get(&only_in_parent), Object::Integer(6));
 
         let child = Environment::new_child(parent.clone());
         assert_eq!(child.borrow_mut().get(&only_in_parent), Object::Integer(6));
 
         let only_in_child = "inchild".to_string();
-        child
+        let result = child
             .borrow_mut()
             .define(only_in_child.clone(), Object::Integer(99));
+        assert!(result.is_ok());
         assert_eq!(child.borrow_mut().get(&only_in_child), Object::Integer(99));
         assert_eq!(parent.borrow_mut().get(&only_in_child), Object::Nil);
     }

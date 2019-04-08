@@ -13,9 +13,16 @@ pub fn apply(proc: &Object, args: &[Object], env: Rc<RefCell<Environment>>) -> O
                 let application_env = Environment::new_child(lambda_env.clone());
                 for (i, p) in parameters.iter().enumerate() {
                     if let Object::Symbol(name) = p {
-                        application_env
+                        let result = application_env
                             .borrow_mut()
                             .define(name.to_string(), args[i].clone());
+
+                        if let Err(_) = result {
+                            return Object::Error(String::from(format!(
+                                "failed to define {} in env",
+                                name
+                            )));
+                        }
                     }
                 }
 
