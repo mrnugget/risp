@@ -8,7 +8,7 @@ mod object;
 mod reader;
 
 fn main() -> io::Result<()> {
-    const PROMPT: &'static str = "> ";
+    const PROMPT: &str = "> ";
 
     loop {
         print!("{}", PROMPT);

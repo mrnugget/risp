@@ -201,7 +201,7 @@ pub fn car(args: &[Object], _env: Rc<RefCell<Environment>>) -> Object {
         _ => return err!("argument has wrong type"),
     };
 
-    if items.len() == 0 {
+    if items.is_empty() {
         return err!("empty list");
     }
 
