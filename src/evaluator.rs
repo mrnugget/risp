@@ -17,11 +17,7 @@ pub fn apply(proc: &Object, args: &[Object], env: Rc<RefCell<Environment>>) -> O
 pub fn eval(exp: Object, env: Rc<RefCell<Environment>>) -> Object {
     match exp {
         Object::Nil | Object::Integer(_) | Object::Callable(_) | Object::Error(_) => exp,
-
-        Object::Symbol(name) => {
-            let val = env.borrow().get(&name);
-            val
-        }
+        Object::Symbol(name) => env.borrow().get(&name),
         Object::List(elems) => {
             if is_definition(&elems) {
                 return make_definition(&elems, env.clone());
