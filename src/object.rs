@@ -20,6 +20,7 @@ impl Environment {
             ("*", Function::Native(multiply)),
             ("list", Function::Native(list)),
             ("cons", Function::Native(cons)),
+            ("car", Function::Native(car)),
             ("define", Function::Native(define)),
         ];
 
@@ -206,6 +207,23 @@ pub fn cons(args: &[Object], _env: Rc<RefCell<Environment>>) -> Object {
     Object::List(items)
 }
 
+pub fn car(args: &[Object], _env: Rc<RefCell<Environment>>) -> Object {
+    if args.len() != 1 {
+        return err!("wrong number of arguments");
+    }
+
+    let items = match &args[0] {
+        Object::List(items) => items,
+        _ => return err!("argument has wrong type"),
+    };
+
+    if items.len() == 0 {
+        return err!("empty list");
+    }
+
+    items[0].clone()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -252,6 +270,24 @@ mod tests {
         assert_eq!(
             cons_result,
             Object::Error(String::from("wrong number of arguments"))
+        );
+    }
+
+    #[test]
+    fn test_car() {
+        let args = vec![Object::List(integer_vec![1, 2])];
+        let car_result = car(&args, Environment::new());
+        assert_eq!(car_result, Object::Integer(1));
+
+        let args = vec![Object::List(Vec::new())];
+        let car_result = car(&args, Environment::new());
+        assert_eq!(car_result, Object::Error(String::from("empty list")));
+
+        let args = vec![Object::Integer(1)];
+        let car_result = car(&args, Environment::new());
+        assert_eq!(
+            car_result,
+            Object::Error(String::from("argument has wrong type"))
         );
     }
 }

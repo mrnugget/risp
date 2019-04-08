@@ -23,11 +23,28 @@ pub fn eval(exp: Object, env: Rc<RefCell<Environment>>) -> Object {
             val
         }
         Object::List(elems) => {
+            if is_definition(&elems) {
+                // TODO: Get rid of the `define` function and then of this
+                let mut iter = elems.into_iter();
+                let proc = eval(iter.next().unwrap(), env.clone());
+                let args = iter.collect::<Vec<Object>>();
+                return apply(&proc, &args, env.clone());
+            }
+
             let mut iter = elems.into_iter();
             let proc = eval(iter.next().unwrap(), env.clone());
-            let args = iter.collect::<Vec<Object>>();
+            let args = iter
+                .map(|a| eval(a.clone(), env.clone()))
+                .collect::<Vec<Object>>();
             apply(&proc, &args, env.clone())
         }
+    }
+}
+
+fn is_definition(exps: &[Object]) -> bool {
+    match exps.first() {
+        Some(&Object::Symbol(ref name)) => name == "define",
+        _ => false,
     }
 }
 
@@ -85,6 +102,11 @@ mod tests {
     }
 
     #[test]
+    fn test_eval_builtin_car() {
+        assert_eval!("(car (cons 1 2))", Object::Integer(1));
+    }
+
+    #[test]
     fn test_eval_applying_non_callable() {
         assert_eval!(
             "(1)",
@@ -96,13 +118,13 @@ mod tests {
     fn test_definitions() {
         assert_eval!(
             "(define foobar 15)
-foobar",
+            foobar",
             Object::Integer(15)
         );
 
         assert_eval!(
             "(define foobar (+ 1 2 3 4))
-        foobar",
+            foobar",
             Object::Integer(10)
         );
     }
