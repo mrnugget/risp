@@ -102,6 +102,15 @@ pub enum Object {
     Error(String),
 }
 
+impl Object {
+    pub fn has_symbol_value(&self, s: &str) -> Option<bool> {
+        match self {
+            Object::Symbol(sym) => Some(sym == s),
+            _ => None,
+        }
+    }
+}
+
 macro_rules! err {
     ( $message:expr ) => {{
         Object::Error(String::from(format!($message)))

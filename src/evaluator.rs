@@ -64,9 +64,9 @@ pub fn eval(exp: Object, env: EnvRef) -> Object {
 }
 
 fn is_lambda(exps: &[Object]) -> bool {
-    match exps.first() {
-        Some(&Object::Symbol(ref name)) => name == "lambda",
-        _ => false,
+    match exps.first().and_then(|o| o.has_symbol_value("lamda")) {
+        Some(b) => b,
+        None => false,
     }
 }
 
@@ -82,9 +82,9 @@ fn make_lambda(exps: &[Object], env: EnvRef) -> Object {
 }
 
 fn is_definition(exps: &[Object]) -> bool {
-    match exps.first() {
-        Some(&Object::Symbol(ref name)) => name == "define",
-        _ => false,
+    match exps.first().and_then(|o| o.has_symbol_value("define")) {
+        Some(b) => b,
+        None => false,
     }
 }
 
