@@ -17,6 +17,7 @@ impl Environment {
 
         let native_functions = &[
             ("+", Function::Native(plus)),
+            ("-", Function::Native(minus)),
             ("*", Function::Native(multiply)),
             ("list", Function::Native(list)),
             ("cons", Function::Native(cons)),

@@ -127,8 +127,8 @@ mod tests {
     #[test]
     fn test_eval_builtin_arithmetic() {
         assert_eval!("(+ 1 2 3)", Object::Integer(6));
-        assert_eval!("(+ 1 2 3 4 5 6)", Object::Integer(21));
-        assert_eval!("(* 2 2 2 2)", Object::Integer(16));
+        assert_eval!("(- 3 2 1)", Object::Integer(0));
+        assert_eval!("(* 2 2 2)", Object::Integer(8));
     }
 
     #[test]
