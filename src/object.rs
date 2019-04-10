@@ -24,8 +24,7 @@ impl Environment {
             ("car", Function::Native(car)),
         ];
 
-        for item in native_functions.into_iter() {
-            let (name, ref func) = item;
+        for (name, func) in native_functions.into_iter() {
             env.define(name.to_string(), Object::Callable(func.clone()))
                 .unwrap();
         }
