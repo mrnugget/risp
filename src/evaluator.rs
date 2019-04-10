@@ -12,7 +12,7 @@ fn apply_lambda(lambda: &Function, args: &[Object]) -> Object {
                     .borrow_mut()
                     .define(name.to_string(), args[i].clone());
 
-                if let Err(_) = result {
+                if result.is_err() {
                     return Object::Error(String::from(format!("failed to define {} in env", name)));
                 }
             }
