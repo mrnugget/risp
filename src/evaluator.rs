@@ -3,36 +3,41 @@ use crate::object::Environment;
 use crate::object::Function;
 use crate::object::Object;
 
-pub fn apply(proc: &Object, args: &[Object], env: EnvRef) -> Object {
-    if let Object::Callable(func) = proc {
-        return match func {
-            Function::Native(builtin) => builtin(args, env),
-            Function::Lambda(parameters, body, lambda_env) => {
-                let application_env = Environment::new_child(lambda_env.clone());
-                for (i, p) in parameters.iter().enumerate() {
-                    if let Object::Symbol(name) = p {
-                        let result = application_env
-                            .borrow_mut()
-                            .define(name.to_string(), args[i].clone());
+fn apply_lambda(lambda: &Function, args: &[Object]) -> Object {
+    if let Function::Lambda(parameters, body, lambda_env) = lambda {
+        let application_env = Environment::new_child(lambda_env.clone());
+        for (i, p) in parameters.iter().enumerate() {
+            if let Object::Symbol(name) = p {
+                let result = application_env
+                    .borrow_mut()
+                    .define(name.to_string(), args[i].clone());
 
-                        if let Err(_) = result {
-                            return Object::Error(String::from(format!(
-                                "failed to define {} in env",
-                                name
-                            )));
-                        }
-                    }
+                if let Err(_) = result {
+                    return Object::Error(String::from(format!("failed to define {} in env", name)));
                 }
-
-                body.iter()
-                    .map(|e| eval(e.clone(), application_env.clone()))
-                    .last()
-                    .unwrap()
             }
-        };
-    }
+        }
 
-    Object::Error(String::from("cannot call non-function"))
+        body.iter()
+            .map(|e| eval(e.clone(), application_env.clone()))
+            .last()
+            .unwrap()
+    } else {
+        Object::Error(String::from(format!(
+            "lambda is not a Function::Lambda: {}",
+            lambda
+        )))
+    }
+}
+
+pub fn apply(proc: &Object, args: &[Object], env: EnvRef) -> Object {
+    match proc {
+        Object::Callable(func) => match func {
+            Function::Native(builtin) => builtin(args, env),
+            Function::Lambda(_, _, _) => apply_lambda(func, args),
+        },
+        _ => Object::Error(String::from("cannot call non-function")),
+    }
 }
 
 pub fn eval(exp: Object, env: EnvRef) -> Object {
