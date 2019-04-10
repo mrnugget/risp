@@ -1,7 +1,4 @@
-use crate::object::EnvRef;
-use crate::object::Environment;
-use crate::object::Function;
-use crate::object::Object;
+use crate::object::{EnvRef, Environment, Function, Object};
 
 fn apply_lambda(lambda: &Function, args: &[Object]) -> Object {
     if let Function::Lambda(parameters, body, lambda_env) = lambda {
