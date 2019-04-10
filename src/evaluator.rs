@@ -6,6 +6,7 @@ use crate::object::Object;
 fn apply_lambda(lambda: &Function, args: &[Object]) -> Object {
     if let Function::Lambda(parameters, body, lambda_env) = lambda {
         let application_env = Environment::new_child(lambda_env.clone());
+
         for (i, p) in parameters.iter().enumerate() {
             if let Object::Symbol(name) = p {
                 let result = application_env
@@ -64,7 +65,7 @@ pub fn eval(exp: Object, env: EnvRef) -> Object {
 }
 
 fn is_lambda(exps: &[Object]) -> bool {
-    match exps.first().and_then(|o| o.has_symbol_value("lamda")) {
+    match exps.first().and_then(|o| o.has_symbol_value("lambda")) {
         Some(b) => b,
         None => false,
     }
