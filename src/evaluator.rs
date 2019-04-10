@@ -1,11 +1,9 @@
-use std::cell::RefCell;
-use std::rc::Rc;
-
+use crate::object::EnvRef;
 use crate::object::Environment;
 use crate::object::Function;
 use crate::object::Object;
 
-pub fn apply(proc: &Object, args: &[Object], env: Rc<RefCell<Environment>>) -> Object {
+pub fn apply(proc: &Object, args: &[Object], env: EnvRef) -> Object {
     if let Object::Callable(func) = proc {
         return match func {
             Function::Native(builtin) => builtin(args, env),
@@ -37,7 +35,7 @@ pub fn apply(proc: &Object, args: &[Object], env: Rc<RefCell<Environment>>) -> O
     Object::Error(String::from("cannot call non-function"))
 }
 
-pub fn eval(exp: Object, env: Rc<RefCell<Environment>>) -> Object {
+pub fn eval(exp: Object, env: EnvRef) -> Object {
     match exp {
         Object::Nil | Object::Integer(_) | Object::Callable(_) | Object::Error(_) => exp,
         Object::Symbol(name) => env.borrow().get(&name),
@@ -67,7 +65,7 @@ fn is_lambda(exps: &[Object]) -> bool {
     }
 }
 
-fn make_lambda(exps: &[Object], env: Rc<RefCell<Environment>>) -> Object {
+fn make_lambda(exps: &[Object], env: EnvRef) -> Object {
     let args = match &exps[1] {
         Object::List(args) => args.clone(),
         _ => return Object::Error(String::from("arguments are not a list")),
@@ -85,7 +83,7 @@ fn is_definition(exps: &[Object]) -> bool {
     }
 }
 
-fn make_definition(exps: &[Object], env: Rc<RefCell<Environment>>) -> Object {
+fn make_definition(exps: &[Object], env: EnvRef) -> Object {
     let name = match &exps[1] {
         Object::Symbol(name) => name.to_string(),
         _ => return Object::Error(String::from("argument has wrong type")),

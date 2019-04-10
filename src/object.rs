@@ -4,12 +4,14 @@ use std::fmt;
 use std::rc::Rc;
 
 pub struct Environment {
-    parent: Option<Rc<RefCell<Environment>>>,
+    parent: Option<EnvRef>,
     entries: HashMap<String, Object>,
 }
 
+pub type EnvRef = Rc<RefCell<Environment>>;
+
 impl Environment {
-    pub fn new() -> Rc<RefCell<Environment>> {
+    pub fn new() -> EnvRef {
         let mut env = Environment {
             parent: None,
             entries: HashMap::new(),
@@ -32,7 +34,7 @@ impl Environment {
         Rc::new(RefCell::new(env))
     }
 
-    pub fn new_child(parent: Rc<RefCell<Environment>>) -> Rc<RefCell<Environment>> {
+    pub fn new_child(parent: EnvRef) -> EnvRef {
         let env = Environment {
             parent: Some(parent),
             entries: HashMap::new(),
@@ -57,11 +59,11 @@ impl Environment {
     }
 }
 
-pub type BuiltinFunction = fn(&[Object], Rc<RefCell<Environment>>) -> Object;
+pub type BuiltinFunction = fn(&[Object], EnvRef) -> Object;
 
 pub enum Function {
     Native(BuiltinFunction),
-    Lambda(Vec<Object>, Vec<Object>, Rc<RefCell<Environment>>),
+    Lambda(Vec<Object>, Vec<Object>, EnvRef),
 }
 
 impl PartialEq for Function {
@@ -150,7 +152,7 @@ impl fmt::Debug for Object {
     }
 }
 
-pub fn plus(args: &[Object], _env: Rc<RefCell<Environment>>) -> Object {
+pub fn plus(args: &[Object], _env: EnvRef) -> Object {
     let mut sum = 0;
     for i in args.iter() {
         if let Object::Integer(val) = i {
@@ -162,7 +164,7 @@ pub fn plus(args: &[Object], _env: Rc<RefCell<Environment>>) -> Object {
     Object::Integer(sum)
 }
 
-pub fn minus(args: &[Object], _env: Rc<RefCell<Environment>>) -> Object {
+pub fn minus(args: &[Object], _env: EnvRef) -> Object {
     if args.len() < 2 {
         return err!("not enough arguments");
     }
@@ -184,7 +186,7 @@ pub fn minus(args: &[Object], _env: Rc<RefCell<Environment>>) -> Object {
     Object::Integer(sum)
 }
 
-pub fn multiply(args: &[Object], _env: Rc<RefCell<Environment>>) -> Object {
+pub fn multiply(args: &[Object], _env: EnvRef) -> Object {
     let mut sum = 1;
     for o in args.iter() {
         if let Object::Integer(val) = o {
@@ -196,12 +198,12 @@ pub fn multiply(args: &[Object], _env: Rc<RefCell<Environment>>) -> Object {
     Object::Integer(sum)
 }
 
-pub fn list(args: &[Object], _env: Rc<RefCell<Environment>>) -> Object {
+pub fn list(args: &[Object], _env: EnvRef) -> Object {
     let items = args.to_vec();
     Object::List(items)
 }
 
-pub fn cons(args: &[Object], _env: Rc<RefCell<Environment>>) -> Object {
+pub fn cons(args: &[Object], _env: EnvRef) -> Object {
     if args.len() != 2 {
         return err!("wrong number of arguments");
     }
@@ -210,7 +212,7 @@ pub fn cons(args: &[Object], _env: Rc<RefCell<Environment>>) -> Object {
     Object::List(items)
 }
 
-pub fn car(args: &[Object], _env: Rc<RefCell<Environment>>) -> Object {
+pub fn car(args: &[Object], _env: EnvRef) -> Object {
     if args.len() != 1 {
         return err!("wrong number of arguments");
     }
