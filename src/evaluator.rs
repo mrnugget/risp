@@ -71,7 +71,7 @@ fn is_lambda(exps: &[Object]) -> bool {
 fn make_lambda(exps: &[Object], env: EnvRef) -> Object {
     let args = match &exps[1] {
         Object::List(args) => args.clone(),
-        _ => return Object::Error(String::from("arguments are not a list")),
+        _ => return Object::new_error("arguments are not a list"),
     };
 
     let body = vec![exps[2].clone()];
@@ -89,7 +89,7 @@ fn is_definition(exps: &[Object]) -> bool {
 fn make_definition(exps: &[Object], env: EnvRef) -> Object {
     let name = match &exps[1] {
         Object::Symbol(name) => name.to_string(),
-        _ => return Object::Error(String::from("argument has wrong type")),
+        _ => return Object::new_error("argument has wrong type"),
     };
 
     let value = eval(exps[2].clone(), env.clone());

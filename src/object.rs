@@ -103,18 +103,16 @@ pub enum Object {
 }
 
 impl Object {
+    pub fn new_error(message: &str) -> Object {
+        Object::Error(String::from(message))
+    }
+
     pub fn has_symbol_value(&self, s: &str) -> Option<bool> {
         match self {
             Object::Symbol(sym) => Some(sym == s),
             _ => None,
         }
     }
-}
-
-macro_rules! err {
-    ( $message:expr ) => {{
-        Object::Error(String::from(format!($message)))
-    }};
 }
 
 impl fmt::Display for Object {
@@ -175,13 +173,13 @@ pub fn plus(args: &[Object], _env: EnvRef) -> Object {
 
 pub fn minus(args: &[Object], _env: EnvRef) -> Object {
     if args.len() < 2 {
-        return err!("not enough arguments");
+        return Object::new_error("not enough arguments");
     }
 
     let mut iter = args.iter();
     let mut sum = match iter.next().unwrap() {
         Object::Integer(first) => *first,
-        _ => return err!("argument has wrong type"),
+        _ => return Object::new_error("argument has wrong type"),
     };
 
     for i in iter {
@@ -214,7 +212,7 @@ pub fn list(args: &[Object], _env: EnvRef) -> Object {
 
 pub fn cons(args: &[Object], _env: EnvRef) -> Object {
     if args.len() != 2 {
-        return err!("wrong number of arguments");
+        return Object::new_error("wrong number of arguments");
     }
 
     let items = args.to_vec();
@@ -223,16 +221,16 @@ pub fn cons(args: &[Object], _env: EnvRef) -> Object {
 
 pub fn car(args: &[Object], _env: EnvRef) -> Object {
     if args.len() != 1 {
-        return err!("wrong number of arguments");
+        return Object::new_error("wrong number of arguments");
     }
 
     let items = match &args[0] {
         Object::List(items) => items,
-        _ => return err!("argument has wrong type"),
+        _ => return Object::new_error("argument has wrong type"),
     };
 
     if items.is_empty() {
-        return err!("empty list");
+        return Object::new_error("empty list");
     }
 
     items[0].clone()
