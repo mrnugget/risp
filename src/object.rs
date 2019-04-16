@@ -43,9 +43,9 @@ impl Environment {
         Rc::new(RefCell::new(env))
     }
 
-    pub fn define(&mut self, key: String, obj: Object) -> Result<(), ()> {
+    pub fn define(&mut self, key: String, obj: Object) -> Result<Object, Object> {
         self.entries.insert(key, obj);
-        Ok(())
+        Ok(Object::Nil)
     }
 
     pub fn get(&self, key: &String) -> Object {
@@ -59,7 +59,7 @@ impl Environment {
     }
 }
 
-pub type BuiltinFunction = fn(&[Object], EnvRef) -> Object;
+pub type BuiltinFunction = fn(&[Object], EnvRef) -> Result<Object, Object>;
 
 pub enum Function {
     Native(BuiltinFunction),
@@ -159,81 +159,81 @@ impl fmt::Debug for Object {
     }
 }
 
-pub fn plus(args: &[Object], _env: EnvRef) -> Object {
+pub fn plus(args: &[Object], _env: EnvRef) -> Result<Object, Object> {
     let mut sum = 0;
     for i in args.iter() {
         if let Object::Integer(val) = i {
             sum += val;
         } else {
-            return Object::Nil;
+            return Ok(Object::Nil);
         }
     }
-    Object::Integer(sum)
+    Ok(Object::Integer(sum))
 }
 
-pub fn minus(args: &[Object], _env: EnvRef) -> Object {
+pub fn minus(args: &[Object], _env: EnvRef) -> Result<Object, Object> {
     if args.len() < 2 {
-        return Object::new_error("not enough arguments");
+        return Err(Object::new_error("not enough arguments"));
     }
 
     let mut iter = args.iter();
     let mut sum = match iter.next().unwrap() {
         Object::Integer(first) => *first,
-        _ => return Object::new_error("argument has wrong type"),
+        _ => return Err(Object::new_error("argument has wrong type")),
     };
 
     for i in iter {
         if let Object::Integer(val) = i {
             sum -= val;
         } else {
-            return Object::Nil;
+            return Err(Object::Nil);
         }
     }
 
-    Object::Integer(sum)
+    Ok(Object::Integer(sum))
 }
 
-pub fn multiply(args: &[Object], _env: EnvRef) -> Object {
+pub fn multiply(args: &[Object], _env: EnvRef) -> Result<Object, Object> {
     let mut sum = 1;
     for o in args.iter() {
         if let Object::Integer(val) = o {
             sum *= val;
         } else {
-            return Object::Nil;
+            return Err(Object::Nil);
         }
     }
-    Object::Integer(sum)
+    Ok(Object::Integer(sum))
 }
 
-pub fn list(args: &[Object], _env: EnvRef) -> Object {
+pub fn list(args: &[Object], _env: EnvRef) -> Result<Object, Object> {
     let items = args.to_vec();
-    Object::List(items)
+    Ok(Object::List(items))
 }
 
-pub fn cons(args: &[Object], _env: EnvRef) -> Object {
+pub fn cons(args: &[Object], _env: EnvRef) -> Result<Object, Object> {
     if args.len() != 2 {
-        return Object::new_error("wrong number of arguments");
+        return Err(Object::new_error("wrong number of arguments"));
     }
 
     let items = args.to_vec();
-    Object::List(items)
+    Ok(Object::List(items))
 }
 
-pub fn car(args: &[Object], _env: EnvRef) -> Object {
+pub fn car(args: &[Object], _env: EnvRef) -> Result<Object, Object> {
     if args.len() != 1 {
-        return Object::new_error("wrong number of arguments");
+        return Err(Object::new_error("wrong number of arguments"));
     }
 
     let items = match &args[0] {
         Object::List(items) => items,
-        _ => return Object::new_error("argument has wrong type"),
+        _ => return Err(Object::new_error("argument has wrong type")),
     };
 
     if items.is_empty() {
-        return Object::new_error("empty list");
+        return Err(Object::new_error("empty list"));
     }
 
-    items[0].clone()
+    Ok(items[0].clone())
 }
 
 #[cfg(test)]
@@ -254,34 +254,34 @@ mod tests {
     fn test_list_plus() {
         let args = integer_vec![1, 2, 3];
         let sum = plus(&args, Environment::new());
-        assert_eq!(sum, Object::Integer(6));
+        assert_eq!(sum, Ok(Object::Integer(6)));
     }
 
     #[test]
     fn test_list_minus() {
         let args = integer_vec![8, 4, 2];
         let result = minus(&args, Environment::new());
-        assert_eq!(result, Object::Integer(2));
+        assert_eq!(result, Ok(Object::Integer(2)));
     }
 
     #[test]
     fn test_list_multiply() {
         let args = integer_vec![1, 2, 3];
         let multiply_result = multiply(&args, Environment::new());
-        assert_eq!(multiply_result, Object::Integer(6));
+        assert_eq!(multiply_result, Ok(Object::Integer(6)));
     }
 
     #[test]
     fn test_cons() {
         let args = integer_vec![1, 2];
         let cons_result = cons(&args, Environment::new());
-        assert_eq!(cons_result, Object::List(integer_vec![1, 2]));
+        assert_eq!(cons_result, Ok(Object::List(integer_vec![1, 2])));
 
         let args = integer_vec![1, 2, 3, 4];
         let cons_result = cons(&args, Environment::new());
         assert_eq!(
             cons_result,
-            Object::Error(String::from("wrong number of arguments"))
+            Err(Object::Error(String::from("wrong number of arguments")))
         );
     }
 
@@ -289,17 +289,17 @@ mod tests {
     fn test_car() {
         let args = vec![Object::List(integer_vec![1, 2])];
         let car_result = car(&args, Environment::new());
-        assert_eq!(car_result, Object::Integer(1));
+        assert_eq!(car_result, Ok(Object::Integer(1)));
 
         let args = vec![Object::List(Vec::new())];
         let car_result = car(&args, Environment::new());
-        assert_eq!(car_result, Object::Error(String::from("empty list")));
+        assert_eq!(car_result, Err(Object::Error(String::from("empty list"))));
 
         let args = vec![Object::Integer(1)];
         let car_result = car(&args, Environment::new());
         assert_eq!(
             car_result,
-            Object::Error(String::from("argument has wrong type"))
+            Err(Object::Error(String::from("argument has wrong type")))
         );
     }
 
